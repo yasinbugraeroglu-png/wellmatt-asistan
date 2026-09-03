@@ -606,6 +606,14 @@ footer.appfoot{ text-align:center; font-size:11px; color:var(--ink-faint); paddi
   box-shadow:0 6px 20px rgba(0,0,0,.25); opacity:0; pointer-events:none; transition:opacity .2s ease, transform .2s ease; z-index:100;
 }
 .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+.pdf-preview-overlay{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;background:#101612}
+.pdf-preview-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;color:#fff;background:#153f2d}
+.pdf-preview-title{font-size:13px;font-weight:700}
+.pdf-preview-actions{display:flex;gap:8px}
+.pdf-preview-actions .btn{min-height:38px;color:#173b29;background:#f5f8f0;border-color:rgba(255,255,255,.7)}
+.pdf-preview-stage{flex:1;overflow:auto;padding:18px;background:#242424;text-align:center;-webkit-overflow-scrolling:touch}
+.pdf-preview-page{display:block;width:min(100%,920px);height:auto;margin:0 auto;background:#fff;box-shadow:0 14px 44px rgba(0,0,0,.42)}
+body.pdf-preview-open{overflow:hidden}
 
 /* Responsive */
 @media (max-width:720px){
@@ -18311,6 +18319,20 @@ function renderStep(){
   updateProgress();
 }
 
+function warnCurrentStepRequired(){
+  var q=questionById(currentQuestionId);
+  var title=q?WM.questionTitle(q,WM.state.answers):"Bu soru";
+  var card=qEl("#qstepCard");
+  if(card){card.style.boxShadow="0 0 0 3px rgba(255,255,255,.82),0 24px 64px rgba(87,40,27,.34)";window.setTimeout(function(){card.style.boxShadow="";},1400);}
+  showToast("Devam etmek için “"+title+"” sorusunu cevaplayın.");
+}
+
+function tryGoToStep(qid){
+  var from=stepIndex(currentQuestionId),to=stepIndex(qid);
+  if(to>from && !stepFullyAnswered(currentQuestionId)){warnCurrentStepRequired();return;}
+  goToStep(qid);
+}
+
 function renderDots(steps, idx){
   var dots = steps.map(function(s, i){
     var done = stepFullyAnswered(s.id);
@@ -18434,7 +18456,7 @@ function renderBudgetStep(){
    --------------------------------------------------------------- */
 function bindStepEvents(q){
   qAll('.step-dot[data-goto]').forEach(function(el){
-    el.addEventListener("click", function(){ goToStep(el.getAttribute("data-goto")); });
+    el.addEventListener("click", function(){ tryGoToStep(el.getAttribute("data-goto")); });
   });
   var backBtn = qEl("#stepBackBtn");
   if (backBtn) backBtn.addEventListener("click", goBack);
@@ -18554,6 +18576,7 @@ function refreshCalcState(){
 }
 
 function goNext(){
+  if (!stepFullyAnswered(currentQuestionId)){ warnCurrentStepRequired(); return; }
   var steps = allSteps();
   var idx = stepIndex(currentQuestionId);
   if (idx < steps.length - 1){ goToStep(steps[idx+1].id, "fwd"); }
@@ -19127,6 +19150,7 @@ function renderResultsScreen(results, view){
       if (v === currentPickView) return;
       currentPickView = v;
       renderResultsScreen(lastResults, currentPickView);
+      window.scrollTo({top:0,behavior:"smooth"});
     });
   });
 
@@ -19187,6 +19211,8 @@ async function createResultsPdfFile(){
   var canvas = document.createElement("canvas");
   canvas.width = 1240; canvas.height = 1754;
   var ctx = canvas.getContext("2d");
+  var logo=document.querySelector(".topbar-logo");
+  if(logo&&logo.decode){try{await logo.decode();}catch(e){}}
   function txt(value){ return String(value || "").replace(/\s+/g," ").trim(); }
   function rounded(x,y,w,h,r,fill,stroke){
     r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fillStyle=fill;ctx.fill();
@@ -19206,8 +19232,8 @@ async function createResultsPdfFile(){
   ctx.fillStyle="#f4f1e8";ctx.fillRect(0,0,canvas.width,canvas.height);
   var grad=ctx.createLinearGradient(0,0,1240,180);grad.addColorStop(0,"#123e2a");grad.addColorStop(1,"#668464");
   ctx.fillStyle=grad;ctx.fillRect(0,0,1240,180);
-  ctx.fillStyle="#fff";ctx.font="700 40px Arial, sans-serif";ctx.fillText("WELLMATT",58,72);
-  ctx.font="400 23px Arial, sans-serif";ctx.fillStyle="rgba(255,255,255,.86)";ctx.fillText("Size özel yatak seçim raporu",58,112);
+  if(logo&&logo.complete&&logo.naturalWidth){ctx.save();ctx.filter="brightness(0) invert(1)";ctx.drawImage(logo,58,30,270,57);ctx.restore();}
+  ctx.font="400 23px Arial, sans-serif";ctx.fillStyle="rgba(255,255,255,.86)";ctx.fillText("Size özel yatak seçim raporu",58,126);
   ctx.font="400 18px Arial, sans-serif";ctx.fillText(new Date().toLocaleDateString("tr-TR"),1040,72);
 
   ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Uyku tercihleriniz",58,230);
@@ -19215,45 +19241,54 @@ async function createResultsPdfFile(){
   ctx.font="600 17px Arial, sans-serif";var cx=58,cy=256;
   chips.forEach(function(label){var w=Math.min(270,ctx.measureText(label).width+30);if(cx+w>1182){cx=58;cy+=42;}rounded(cx,cy,w,32,16,"#dfeadb","#a7bea8");ctx.fillStyle="#244a34";ctx.fillText(label,cx+15,cy+22);cx+=w+10;});
 
-  ctx.fillStyle="#173827";ctx.font="700 29px Arial, sans-serif";ctx.fillText("Size özel seçtiğimiz yataklar",58,365);
-  var cards=qAll(".rec-grid > .product-card",root).slice(0,3),cardW=360,cardH=350;
+  var productsTitleY=Math.max(365,cy+82),cardsY=productsTitleY+30;
+  ctx.fillStyle="#173827";ctx.font="700 29px Arial, sans-serif";ctx.fillText("Size özel seçtiğimiz yataklar",58,productsTitleY);
+  var cards=qAll(".rec-grid > .product-card",root).slice(0,3),cardW=360,cardH=310;
   cards.forEach(function(card,i){
-    var x=58+i*(cardW+22),y=395;
+    var x=58+i*(cardW+22),y=cardsY;
     rounded(x,y,cardW,cardH,22,"#f8faf3","#b5c9b5");
     ctx.fillStyle=i===0?"#245d40":"#466f53";ctx.fillRect(x,y,cardW,11);
     ctx.fillStyle="#173827";ctx.font="700 23px Arial, sans-serif";
     wrapped(card.querySelector("h3")&&card.querySelector("h3").textContent,x+20,y+48,cardW-40,27,2);
     ctx.fillStyle="#65766a";ctx.font="600 15px Arial, sans-serif";
     wrapped(card.querySelector(".pc-cat")&&card.querySelector(".pc-cat").textContent,x+20,y+103,cardW-40,20,1);
-    ctx.fillStyle="#1e5237";ctx.font="700 18px Arial, sans-serif";
-    wrapped(card.querySelector(".pc-price")&&card.querySelector(".pc-price").textContent,x+20,y+145,cardW-40,23,3);
+    var price=card.querySelector(".pc-price"),sizeLine=price&&price.querySelector(".size-line"),amount=price&&price.querySelector(".amount"),cash=price&&price.querySelector(".cash-price");
+    var amountMain=amount?Array.prototype.filter.call(amount.childNodes,function(n){return n.nodeType===3;}).map(function(n){return n.nodeValue;}).join(" "):"";
+    var unit=amount&&amount.querySelector(".unit"),old=amount&&amount.querySelector(".strike");
+    ctx.fillStyle="#486453";ctx.font="600 14px Arial, sans-serif";wrapped(sizeLine&&sizeLine.textContent,x+20,y+140,cardW-40,19,1);
+    ctx.fillStyle="#1e5237";ctx.font="700 17px Arial, sans-serif";wrapped(txt(amountMain)+(unit?" "+txt(unit.textContent):"")+(old?" · Eski: "+txt(old.textContent):""),x+20,y+168,cardW-40,21,2);
+    ctx.fillStyle="#315f43";ctx.font="700 14px Arial, sans-serif";wrapped(cash&&cash.textContent,x+20,y+215,cardW-40,18,1);
     ctx.fillStyle="#3c5847";ctx.font="400 15px Arial, sans-serif";
     var reasons=qAll(".pc-reasons li",card).slice(0,2).map(function(li){return "• "+txt(li.textContent);}).join(" ");
-    wrapped(reasons,x+20,y+235,cardW-40,20,5);
+    wrapped(reasons,x+20,y+250,cardW-40,18,3);
   });
 
   var table=root.querySelector("table.compare");
-  ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Ürün karşılaştırması",58,805);
+  var compareTitleY=cardsY+cardH+55,tableY=compareTitleY+25;
+  ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Ürün karşılaştırması",58,compareTitleY);
   if(table){
     var rows=qAll("tr",table).slice(0,7),colX=[58,330,610,890],colW=[250,250,250,292];
-    rows.forEach(function(row,ri){var y=830+ri*58;ctx.fillStyle=ri===0?"#d7e5d3":(ri%2?"#f8faf4":"#edf3e9");ctx.fillRect(48,y,1144,54);qAll("th,td",row).slice(0,4).forEach(function(cell,ci){ctx.fillStyle="#244635";ctx.font=(ri===0||ci===0?"700 ":"600 ")+(ri===0?"15px":"16px")+" Arial, sans-serif";wrapped(cell.textContent,colX[ci],y+22,colW[ci],18,2);});});
+    rows.forEach(function(row,ri){var y=tableY+ri*48;ctx.fillStyle=ri===0?"#d7e5d3":(ri%2?"#f8faf4":"#edf3e9");ctx.fillRect(48,y,1144,44);qAll("th,td",row).slice(0,4).forEach(function(cell,ci){ctx.fillStyle="#244635";ctx.font=(ri===0||ci===0?"700 ":"600 ")+(ri===0?"14px":"15px")+" Arial, sans-serif";wrapped(cell.textContent,colX[ci],y+19,colW[ci],17,2);});});
   }else{
-    ctx.fillStyle="#5c7062";ctx.font="400 18px Arial, sans-serif";ctx.fillText("Bu ürün grubunda karşılaştırma tablosu bulunmuyor.",58,850);
+    ctx.fillStyle="#5c7062";ctx.font="400 18px Arial, sans-serif";ctx.fillText("Bu ürün grubunda karşılaştırma tablosu bulunmuyor.",58,tableY+24);
   }
 
-  ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Tamamlayıcı ürünler",58,1265);
+  var complementaryTitleY=table?(tableY+7*48+52):(tableY+90),miniY=complementaryTitleY+25;
+  ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Tamamlayıcı ürünler",58,complementaryTitleY);
   var minis=qAll(".complementary-grid .mini-card",root).slice(0,4);
-  minis.forEach(function(card,i){var x=58+(i%2)*562,y=1290+Math.floor(i/2)*154;rounded(x,y,540,132,18,"#f8faf3","#b5c9b5");ctx.fillStyle="#234936";ctx.font="700 19px Arial, sans-serif";wrapped(card.querySelector("h4")&&card.querySelector("h4").textContent,x+18,y+32,500,22,2);ctx.fillStyle="#315f43";ctx.font="700 16px Arial, sans-serif";wrapped(card.querySelector(".mini-price")&&card.querySelector(".mini-price").textContent,x+18,y+78,500,20,1);ctx.fillStyle="#65766a";ctx.font="400 14px Arial, sans-serif";wrapped(card.querySelector(".mini-reason")&&card.querySelector(".mini-reason").textContent,x+18,y+104,500,17,2);});
+  minis.forEach(function(card,i){var x=58+(i%2)*562,y=miniY+Math.floor(i/2)*126,priceEl=card.querySelector(".mini-price"),oldEl=priceEl&&priceEl.querySelector(".mini-old"),current=priceEl?Array.prototype.filter.call(priceEl.childNodes,function(n){return n.nodeType===3;}).map(function(n){return n.nodeValue;}).join(" "):"";rounded(x,y,540,112,18,"#f8faf3","#b5c9b5");ctx.fillStyle="#234936";ctx.font="700 18px Arial, sans-serif";wrapped(card.querySelector("h4")&&card.querySelector("h4").textContent,x+18,y+29,500,20,2);ctx.fillStyle="#315f43";ctx.font="700 15px Arial, sans-serif";wrapped(txt(current)+(oldEl?" · Eski: "+txt(oldEl.textContent):""),x+18,y+70,500,18,1);ctx.fillStyle="#65766a";ctx.font="400 13px Arial, sans-serif";wrapped(card.querySelector(".mini-reason")&&card.querySelector(".mini-reason").textContent,x+18,y+94,500,15,1);});
   ctx.fillStyle="#466353";ctx.font="400 15px Arial, sans-serif";ctx.fillText("Fiyatlar ve stok durumu sipariş öncesinde doğrulanmalıdır.",58,1692);
   ctx.textAlign="right";ctx.fillText("wellmatt.com",1182,1692);ctx.textAlign="left";
 
   var PDF=window.jspdf.jsPDF;
   var pdf=new PDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});
-  pdf.addImage(canvas.toDataURL("image/jpeg",0.92),"JPEG",0,0,210,297,undefined,"FAST");
+  var previewDataUrl=canvas.toDataURL("image/jpeg",0.92);
+  pdf.addImage(previewDataUrl,"JPEG",0,0,210,297,undefined,"FAST");
   window.WM_LAST_PDF_PAGES=pdf.getNumberOfPages();
   root.setAttribute("data-last-pdf-pages",String(pdf.getNumberOfPages()));
-  var blob=pdf.output("blob");
-  return new File([blob],"wellmatt-yatak-onerileri.pdf",{type:"application/pdf"});
+  var blob=pdf.output("blob"),file=new File([blob],"wellmatt-yatak-onerileri.pdf",{type:"application/pdf"});
+  file.wmPreviewDataUrl=previewDataUrl;
+  return file;
 }
 
 function ensurePdfLibrary(){
@@ -19309,20 +19344,26 @@ async function shareSummary(){
   }
 }
 async function previewResultsPdf(){
-  var preview=window.open("","_blank");
-  if(preview){preview.document.write("<title>WellMatt PDF hazırlanıyor</title><p style='font-family:Arial;padding:24px'>PDF hazırlanıyor…</p>");}
   try{
     showToast("Tek sayfalık PDF hazırlanıyor…");
     var file=await createResultsPdfFile();
-    var url=URL.createObjectURL(file);
-    if(preview){preview.location.href=url;}else{downloadPdfFile(file);}
+    showPdfPreview(file);
     showToast("Tek sayfalık PDF hazır.");
-    window.setTimeout(function(){URL.revokeObjectURL(url);},120000);
   }catch(err){
-    if(preview) preview.close();
     showToast("PDF hazırlanamadı. Lütfen yeniden deneyin.");
     console.error(err);
   }
+}
+function showPdfPreview(file){
+  var old=qEl("#pdfPreviewOverlay");if(old) old.remove();
+  var overlay=document.createElement("div");
+  overlay.className="pdf-preview-overlay";overlay.id="pdfPreviewOverlay";
+  overlay.innerHTML='<div class="pdf-preview-bar"><span class="pdf-preview-title">WellMatt — Tek sayfalık PDF</span><div class="pdf-preview-actions"><button type="button" class="btn btn-sm" id="pdfDownloadNow">PDF’i indir</button><button type="button" class="btn btn-sm" id="pdfPreviewClose">Kapat</button></div></div><div class="pdf-preview-stage"><img class="pdf-preview-page" alt="WellMatt tek sayfalık PDF ön izlemesi"></div>';
+  document.body.appendChild(overlay);document.body.classList.add("pdf-preview-open");
+  overlay.querySelector(".pdf-preview-page").src=file.wmPreviewDataUrl;
+  overlay.querySelector("#pdfDownloadNow").addEventListener("click",function(){downloadPdfFile(file);});
+  function closePreview(){overlay.remove();document.body.classList.remove("pdf-preview-open");}
+  overlay.querySelector("#pdfPreviewClose").addEventListener("click",closePreview);
 }
 window.WM_CREATE_RESULTS_PDF = createResultsPdfFile;
 
