@@ -17557,17 +17557,16 @@ var BUDGET_SLIDER_STEP = 1000;
 /* ------------------------------------------------------------------------
    8) ÖNERİ HAVUZU (iş kuralları burada uygulanır)
    ------------------------------------------------------------------------ */
-/** "80x180 üzerinde bir çocuk yatağı seçilirse" kuralı — V15: çocuk listesine
+/** "80x180 ve üzerinde bir çocuk yatağı seçilirse" kuralı — çocuk listesine
  *  80x180'den KÜÇÜK ölçüler de eklendiği için artık listedeki konuma değil,
- *  gerçek boyutlara bakılır: en ve boy taban ölçüden (80x180) küçük değilse ve
- *  en az biri ondan büyükse "taban üzeri" sayılır (90x190, 90x200, 100x200,
- *  110x190, 120x200). 80x180 ve altındaki ölçülerde kural uygulanmaz. */
+ *  gerçek boyutlara bakılır. En az 80 cm genişlik ve 180 cm uzunluktaki
+ *  ölçülerde kural uygulanır (80x180 dahil). */
 function isChildSizeAboveBase(size){
   if (!size || size === "diger") return false;
   var m = /^(\d+)x(\d+)$/.exec(size);
   if (!m) return false;
   var w = Number(m[1]), l = Number(m[2]);
-  return w >= 80 && l >= 180 && (w > 80 || l > 180);
+  return w >= 80 && l >= 180;
 }
 function poolFor(a, opts){
   opts = opts || {};
@@ -17575,11 +17574,10 @@ function poolFor(a, opts){
     // Bebek/çocuk: yeni boy/pozisyon/uyku-derinliği kuralları yetişkin gövde
     // tipine göre yazıldığı için burada uygulanmaz; alerjen hassasiyeti
     // (madde: "alerjik rahatsızlığı var mıdır?") + (yalnızca çocukta) 80x180
-    // üzeri ölçü + spor durumuna göre kullanım ömrü şartı.
+    // ve üzeri ölçü + spor durumuna göre kullanım ömrü şartı.
     // V9: "Yaş grubu" sorusu çocukta kaldırıldı — artık çocuk havuzu tek bir
-    // yaş cevabına göre daralmıyor; bunun yerine 80x180'den BÜYÜK bir ölçü
-    // seçildiyse 0-2 yaş kriterli (bebek/XS) ürünler havuzdan elenir, 80x180
-    // (taban ölçü) seçiliyse hem 0-2 hem 0-15 etiketli ürünler havuzda kalır.
+    // yaş cevabına göre daralmıyor; bunun yerine 80x180 veya daha büyük bir
+    // ölçü seçildiyse 0-2 yaş kriterli (bebek/XS) ürünler havuzdan elenir.
     var sporty = a.usageType === "child" && a.childSport && a.childSport !== "hayir";
     var sizeAboveBase = a.usageType === "child" && isChildSizeAboveBase(a.size);
     var lifespanMin = sizeAboveBase ? (sporty ? 7 : 6) : 1;
@@ -17985,7 +17983,7 @@ function computeResults(){
     } else {
       if (!isChildCat) reason = "Bebek/çocuk kullanım türü seçili; yetişkin yatağı olduğu için elendi.";
       else if (a.usageType === "baby" && p.ageSuitability !== "0-2") reason = "0-2 yaş bebek ölçüsüne uygun işaretlenmediği için elendi.";
-      else if (a.usageType === "child" && isChildSizeAboveBase(a.size) && p.ageSuitability === "0-2") reason = "80x180 üzeri ölçüde, 0-2 yaş kriterli (bebek/XS) bu ürün önerilmiyor.";
+      else if (a.usageType === "child" && isChildSizeAboveBase(a.size) && p.ageSuitability === "0-2") reason = "80x180 ve üzeri ölçüde, 0-2 yaş kriterli (bebek/XS) bu ürün önerilmiyor.";
       else if (!found){
         var sportyR = a.usageType === "child" && a.childSport && a.childSport !== "hayir";
         var sizeAboveBaseR = a.usageType === "child" && isChildSizeAboveBase(a.size);
