@@ -19348,14 +19348,21 @@ function ensurePdfLibrary(){
 }
 
 function downloadPdfFile(file){
-  var url = URL.createObjectURL(file);
+  /* Safari/iOS bazı gömülü tarayıcılarda application/pdf blob'unu indirmek
+     yerine görüntüleyicide açar. İndirme kopyasını octet-stream olarak vermek,
+     download niteliğinin gerçek bir dosya indirmesi olarak ele alınmasını sağlar. */
+  var downloadBlob = new Blob([file], {type:"application/octet-stream"});
+  var url = URL.createObjectURL(downloadBlob);
   var a = document.createElement("a");
   a.href = url;
   a.download = file.name || "wellmatt-yatak-onerileri.pdf";
+  a.target = "_self";
+  a.rel = "noopener";
+  a.style.display = "none";
   document.body.appendChild(a);
-  a.click();
+  a.dispatchEvent(new MouseEvent("click",{bubbles:true,cancelable:true,view:window}));
   a.remove();
-  window.setTimeout(function(){ URL.revokeObjectURL(url); },2000);
+  window.setTimeout(function(){ URL.revokeObjectURL(url); },60000);
 }
 
 async function shareSummary(){
