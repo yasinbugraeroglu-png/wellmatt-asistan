@@ -632,6 +632,7 @@ footer.appfoot{ text-align:center; font-size:11px; color:var(--ink-faint); paddi
    tarayıcının yazdırma penceresinde kâğıt boyutunu otomatik A4'e getirir. */
 @page{ size:A4 portrait; margin:8mm; }
 body.print-layout{ background:#fff !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+body.print-layout .wm-nature-bg{ display:none !important; }
 body.print-layout .topbar, body.print-layout .step-nav, body.print-layout .step-dots,
 body.print-layout .pc-actions, body.print-layout .mini-actions, body.print-layout .results-toolbar,
 body.print-layout .toast, body.print-layout footer.appfoot, body.print-layout #screen-questions,
@@ -654,6 +655,8 @@ body.print-layout .accessory-row{ margin-top:8px; }
 body.print-layout #resultsRoot > :last-child{ margin-bottom:0; }
 body.print-layout .accessory-row .product-card.accessory-card{ max-width:none; }
 body.print-layout .complementary-grid{ grid-template-columns:repeat(4,1fr); gap:8px; }
+body.pdf-capture .pc-imgwrap,
+body.pdf-capture .mini-img{ display:none !important; }
 @media print{
   /* Düğme yerine tarayıcının kendi Ctrl+P'si kullanılırsa da ui.js beforeprint
      ile aynı hazırlığı yapar; burada yalnızca güvenlik payı olarak ekrana özgü
@@ -685,7 +688,7 @@ body.wm-theme-child{
 body.wm-theme-baby{
   --wm-scene-image:url("wellmatt-theme-baby.jpg");
   --wm-scene-position:center center;
-  --wm-scene-position-mobile:31% center;
+  --wm-scene-position-mobile:31% 24%;
   --wm-glass:linear-gradient(145deg,rgba(246,248,234,.72),rgba(214,228,204,.50));
 }
 .wm-nature-bg{
@@ -804,7 +807,20 @@ body.wm-theme-baby .wizard-root{max-width:650px;margin-left:auto;margin-right:0}
 .btn-primary,.btn-accent{color:#fff;background:linear-gradient(135deg,#1d5339,#4d795b);box-shadow:0 10px 22px rgba(24,77,51,.22)}
 .btn-primary:hover:not(:disabled),.btn-accent:hover:not(:disabled){background:linear-gradient(135deg,#17452f,#416b50)}
 .btn-outline,.btn-soft{background:rgba(249,251,243,.54);border-color:rgba(24,73,47,.20);color:#173b29}
-.budget-slider-wrap::before,.range-slider-endlabels,.step-missing-hint.ok{color:#456151}
+.budget-slider-wrap::before{color:#456151}
+.range-slider-endlabels,
+.step-missing-hint,
+.step-missing-hint.ok{
+  color:#fff !important;
+  text-shadow:0 2px 8px rgba(4,31,18,.72);
+}
+.step-missing-hint{
+  display:inline-block;
+  padding:4px 9px;
+  border:1px solid rgba(255,255,255,.62);
+  border-radius:999px;
+  background:rgba(13,59,39,.48);
+}
 .range-slider-track{background:rgba(25,76,50,.16)}
 .range-slider-fill{background:linear-gradient(90deg,#1c5039,#78976d)}
 .range-slider input[type="range"]::-webkit-slider-thumb{border-color:#1c5039;background:#eef5e8}
@@ -1054,6 +1070,13 @@ body.wm-theme-baby .wizard-root{max-width:650px;margin-left:auto;margin-right:0}
 #screen-results table.compare .col-1,
 #screen-results table.compare .col-2,
 #screen-results table.compare .col-3{background:rgba(247,250,241,.46) !important}
+#screen-results .pct-pill{
+  color:#fff !important;
+  text-shadow:0 1px 3px rgba(0,0,0,.24);
+}
+#screen-results .pct-pill.pct-good{background:#2f7450;border-color:#75a98a}
+#screen-results .pct-pill.pct-mid{background:#9b7025;border-color:#c8a968}
+#screen-results .pct-pill.pct-low{background:#9d4439;border-color:#c9847b}
 #screen-results .mini-card,
 #screen-results .excluded-item,
 #screen-results .disclaimer-box,
@@ -1171,7 +1194,19 @@ body.wm-theme-baby .wizard-root{max-width:650px;margin-left:auto;margin-right:0}
   .step-nav .btn{min-height:44px}
   .step-nav > #stepBackBtn{padding-left:5px;padding-right:5px;font-size:11px}
   #calcBtn{padding:9px 8px;font-size:12.5px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}
+  .qstep-card:has(.budget-slider-wrap) .range-slider-endlabels{
+    margin-top:8px;
+    padding:5px 9px;
+    border:1px solid rgba(255,255,255,.60);
+    border-radius:10px;
+    background:rgba(13,59,39,.44);
+  }
   .kbd-hint-bottom{display:none}
+}
+@media(min-width:721px){
+  .qstep-block[data-qid="usageType"] .opt-tiles{
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
 }
 @media(max-width:340px){
   .opt-tiles,.opt-tiles.opt-tiles-wide{grid-template-columns:1fr}
@@ -19011,7 +19046,7 @@ function renderResultsScreen(results, view){
   });
 
   qEl("#shareBtn").addEventListener("click", function(){ shareSummary(); });
-  qEl("#printBtn").addEventListener("click", function(){ window.print(); });
+  qEl("#printBtn").addEventListener("click", function(){ previewResultsPdf(); });
 }
 
 /* ---------------------------------------------------------------
@@ -19022,12 +19057,11 @@ function renderResultsScreen(results, view){
    Zoom küçüldükçe içerik yatayda daha geniş yerleşebildiği (3 kart yan
    yana, tablo tek satır) için yükseklik de kısalır; bu yüzden birkaç
    yineleme ile genişlik = 733/zoom, yükseklik×zoom ≤ 1062 dengesine
-   yakınsanır. Okunabilirlik için alt sınır %45'tir — içerik bu oranda
-   bile sığmıyorsa (çok nadir) CSS'teki break-inside kuralları kartları
-   bölmeden 2. sayfaya taşır. Yazdırma bitince (afterprint) tüm geçici
+   yakınsanır. Sabit sonuç içeriğinin tek A4 sayfaya sığması için ölçek
+   gerektiğinde daha da küçülebilir. Yazdırma bitince (afterprint) tüm geçici
    stiller kaldırılır. Ctrl+P ile de aynı hazırlık çalışır.
    --------------------------------------------------------------- */
-var PRINT_PAGE_W = 733, PRINT_PAGE_H = 1062, PRINT_MIN_ZOOM = 0.45;
+var PRINT_PAGE_W = 733, PRINT_PAGE_H = 1062, PRINT_MIN_ZOOM = 0.08;
 var printPrevTitle = null;
 function preparePrintLayout(){
   var root = document.getElementById("screen-results");
@@ -19037,7 +19071,7 @@ function preparePrintLayout(){
   document.title = "WellMatt Yatak Seçim Rehberi - Sonuç";
   root.style.zoom = "1";
   var z = 1;
-  for (var i = 0; i < 6; i++){
+  for (var i = 0; i < 10; i++){
     root.style.width = Math.round(PRINT_PAGE_W / z) + "px";
     var h = root.scrollHeight || 1;
     var nz = Math.max(PRINT_MIN_ZOOM, Math.min(1, (PRINT_PAGE_H * 0.96) / h)); // %4 emniyet payı (kenar/yuvarlama)
@@ -19058,25 +19092,135 @@ function cleanupPrintLayout(){
 window.addEventListener("beforeprint", preparePrintLayout);
 window.addEventListener("afterprint", cleanupPrintLayout);
 
-/** V12: "Özeti kopyala" yerine "Paylaş" — Web Share API destekleniyorsa
- *  (çoğu mobil tarayıcı) işletim sisteminin WhatsApp/Instagram vb.
- *  uygulamaları içeren native paylaşım ekranını açar. NOT (README'de de
- *  açıklanmıştır): bu, ekranın kendisini bir PDF DOSYASI olarak eklemez —
- *  tarayıcı içinden script ile PDF üretip dosya olarak paylaşmak,
- *  html2canvas/jsPDF gibi harici bir kütüphane gerektirir ve bu projenin
- *  bağımsız/çevrimdışı tek dosyalık mimarisiyle çelişir. Bunun yerine özet
- *  metni paylaşılır; PDF'in kendisi ayrı olarak "PDF olarak kaydet"
- *  butonuyla oluşturulup istenen uygulamaya elle eklenebilir. Web Share API
- *  desteklenmiyorsa (çoğu masaüstü tarayıcı) özet panoya kopyalanır. */
-function shareSummary(){
-  var text = qEl("#summaryText") ? qEl("#summaryText").textContent : "";
-  if (navigator.share){
-    navigator.share({ title: "WellMatt Yatak Seçim Rehberi — Uyku Tercihlerim", text: text }).catch(function(){});
-  } else {
-    copyToClipboard(text);
-    showToast("Bu tarayıcıda paylaşım ekranı desteklenmiyor; özet panoya kopyalandı.");
+/** Sonuç ekranını A4 dikey ölçüsüne orantılı sığdırarak daima tek sayfalık
+ *  gerçek bir PDF dosyası üretir. Kütüphaneler final klasöründe yerel tutulur;
+ *  GitHub Pages'te üçüncü taraf ağ isteğine ihtiyaç duyulmaz. */
+async function createResultsPdfFile(){
+  var root = qEl("#screen-results");
+  if (!root || !root.classList.contains("show")) throw new Error("Sonuç ekranı hazır değil.");
+  if (!window.jspdf || !window.jspdf.jsPDF) throw new Error("PDF bileşeni yüklenemedi.");
+  var canvas = document.createElement("canvas");
+  canvas.width = 1240; canvas.height = 1754;
+  var ctx = canvas.getContext("2d");
+  function txt(value){ return String(value || "").replace(/\s+/g," ").trim(); }
+  function rounded(x,y,w,h,r,fill,stroke){
+    ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fillStyle=fill; ctx.fill();
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
+  }
+  function wrapped(value,x,y,maxWidth,lineHeight,maxLines){
+    var words=txt(value).split(" "),line="",lines=[];
+    words.forEach(function(word){
+      var test=line ? line+" "+word : word;
+      if(ctx.measureText(test).width>maxWidth && line){lines.push(line);line=word;}else line=test;
+    });
+    if(line) lines.push(line);
+    if(lines.length>maxLines){lines=lines.slice(0,maxLines);lines[maxLines-1]=lines[maxLines-1].replace(/[.,;:]?$/,"…");}
+    lines.forEach(function(item,i){ctx.fillText(item,x,y+i*lineHeight);});
+    return y+lines.length*lineHeight;
+  }
+  ctx.fillStyle="#f4f1e8";ctx.fillRect(0,0,canvas.width,canvas.height);
+  var grad=ctx.createLinearGradient(0,0,1240,180);grad.addColorStop(0,"#123e2a");grad.addColorStop(1,"#668464");
+  ctx.fillStyle=grad;ctx.fillRect(0,0,1240,180);
+  ctx.fillStyle="#fff";ctx.font="700 40px Arial, sans-serif";ctx.fillText("WELLMATT",58,72);
+  ctx.font="400 23px Arial, sans-serif";ctx.fillStyle="rgba(255,255,255,.86)";ctx.fillText("Size özel yatak seçim raporu",58,112);
+  ctx.font="400 18px Arial, sans-serif";ctx.fillText(new Date().toLocaleDateString("tr-TR"),1040,72);
+
+  ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Uyku tercihleriniz",58,230);
+  var chips=qAll(".chip",root).map(function(el){return txt(el.textContent);});
+  ctx.font="600 17px Arial, sans-serif";var cx=58,cy=256;
+  chips.forEach(function(label){var w=Math.min(270,ctx.measureText(label).width+30);if(cx+w>1182){cx=58;cy+=42;}rounded(cx,cy,w,32,16,"#dfeadb","#a7bea8");ctx.fillStyle="#244a34";ctx.fillText(label,cx+15,cy+22);cx+=w+10;});
+
+  ctx.fillStyle="#173827";ctx.font="700 29px Arial, sans-serif";ctx.fillText("Size özel seçtiğimiz yataklar",58,365);
+  var cards=qAll(".rec-grid > .product-card",root).slice(0,3),cardW=360,cardH=350;
+  cards.forEach(function(card,i){
+    var x=58+i*(cardW+22),y=395;
+    rounded(x,y,cardW,cardH,22,"#f8faf3","#b5c9b5");
+    ctx.fillStyle=i===0?"#245d40":"#466f53";ctx.fillRect(x,y,cardW,11);
+    ctx.fillStyle="#173827";ctx.font="700 23px Arial, sans-serif";
+    wrapped(card.querySelector("h3")&&card.querySelector("h3").textContent,x+20,y+48,cardW-40,27,2);
+    ctx.fillStyle="#65766a";ctx.font="600 15px Arial, sans-serif";
+    wrapped(card.querySelector(".pc-cat")&&card.querySelector(".pc-cat").textContent,x+20,y+103,cardW-40,20,1);
+    ctx.fillStyle="#1e5237";ctx.font="700 18px Arial, sans-serif";
+    wrapped(card.querySelector(".pc-price")&&card.querySelector(".pc-price").textContent,x+20,y+145,cardW-40,23,3);
+    ctx.fillStyle="#3c5847";ctx.font="400 15px Arial, sans-serif";
+    var reasons=qAll(".pc-reasons li",card).slice(0,2).map(function(li){return "• "+txt(li.textContent);}).join(" ");
+    wrapped(reasons,x+20,y+235,cardW-40,20,5);
+  });
+
+  var table=root.querySelector("table.compare");
+  ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Ürün karşılaştırması",58,805);
+  if(table){
+    var rows=qAll("tr",table).slice(0,7),colX=[58,330,610,890],colW=[250,250,250,292];
+    rows.forEach(function(row,ri){var y=830+ri*58;ctx.fillStyle=ri===0?"#d7e5d3":(ri%2?"#f8faf4":"#edf3e9");ctx.fillRect(48,y,1144,54);qAll("th,td",row).slice(0,4).forEach(function(cell,ci){ctx.fillStyle="#244635";ctx.font=(ri===0||ci===0?"700 ":"600 ")+(ri===0?"15px":"16px")+" Arial, sans-serif";wrapped(cell.textContent,colX[ci],y+22,colW[ci],18,2);});});
+  }else{
+    ctx.fillStyle="#5c7062";ctx.font="400 18px Arial, sans-serif";ctx.fillText("Bu ürün grubunda karşılaştırma tablosu bulunmuyor.",58,850);
+  }
+
+  ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Tamamlayıcı ürünler",58,1265);
+  var minis=qAll(".complementary-grid .mini-card",root).slice(0,4);
+  minis.forEach(function(card,i){var x=58+(i%2)*562,y=1290+Math.floor(i/2)*154;rounded(x,y,540,132,18,"#f8faf3","#b5c9b5");ctx.fillStyle="#234936";ctx.font="700 19px Arial, sans-serif";wrapped(card.querySelector("h4")&&card.querySelector("h4").textContent,x+18,y+32,500,22,2);ctx.fillStyle="#315f43";ctx.font="700 16px Arial, sans-serif";wrapped(card.querySelector(".mini-price")&&card.querySelector(".mini-price").textContent,x+18,y+78,500,20,1);ctx.fillStyle="#65766a";ctx.font="400 14px Arial, sans-serif";wrapped(card.querySelector(".mini-reason")&&card.querySelector(".mini-reason").textContent,x+18,y+104,500,17,2);});
+  ctx.fillStyle="#466353";ctx.font="400 15px Arial, sans-serif";ctx.fillText("Fiyatlar ve stok durumu sipariş öncesinde doğrulanmalıdır.",58,1692);
+  ctx.textAlign="right";ctx.fillText("wellmatt.com",1182,1692);ctx.textAlign="left";
+
+  var PDF=window.jspdf.jsPDF;
+  var pdf=new PDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});
+  pdf.addImage(canvas.toDataURL("image/jpeg",0.92),"JPEG",0,0,210,297,undefined,"FAST");
+  window.WM_LAST_PDF_PAGES=pdf.getNumberOfPages();
+  root.setAttribute("data-last-pdf-pages",String(pdf.getNumberOfPages()));
+  var blob=pdf.output("blob");
+  return new File([blob],"wellmatt-yatak-onerileri.pdf",{type:"application/pdf"});
+}
+
+function downloadPdfFile(file){
+  var url = URL.createObjectURL(file);
+  var a = document.createElement("a");
+  a.href = url;
+  a.download = file.name || "wellmatt-yatak-onerileri.pdf";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.setTimeout(function(){ URL.revokeObjectURL(url); },2000);
+}
+
+async function shareSummary(){
+  var btn = qEl("#shareBtn");
+  if (btn) btn.disabled = true;
+  showToast("Tek sayfalık PDF hazırlanıyor…");
+  try{
+    var file = await createResultsPdfFile();
+    var payload = {files:[file],title:"WellMatt Yatak Seçim Rehberi",text:"Size özel WellMatt yatak önerileri"};
+    if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+      await navigator.share(payload);
+    } else {
+      downloadPdfFile(file);
+      showToast("PDF hazırlandı ve indirildi.");
+    }
+  } catch(err){
+    if (!err || err.name !== "AbortError"){
+      showToast("PDF hazırlanamadı. Lütfen yeniden deneyin.");
+      console.error(err);
+    }
+  } finally {
+    if (btn) btn.disabled = false;
   }
 }
+async function previewResultsPdf(){
+  var preview=window.open("","_blank");
+  if(preview){preview.document.write("<title>WellMatt PDF hazırlanıyor</title><p style='font-family:Arial;padding:24px'>PDF hazırlanıyor…</p>");}
+  try{
+    showToast("Tek sayfalık PDF hazırlanıyor…");
+    var file=await createResultsPdfFile();
+    var url=URL.createObjectURL(file);
+    if(preview){preview.location.href=url;}else{downloadPdfFile(file);}
+    showToast("Tek sayfalık PDF hazır.");
+    window.setTimeout(function(){URL.revokeObjectURL(url);},120000);
+  }catch(err){
+    if(preview) preview.close();
+    showToast("PDF hazırlanamadı. Lütfen yeniden deneyin.");
+    console.error(err);
+  }
+}
+window.WM_CREATE_RESULTS_PDF = createResultsPdfFile;
 
 function copyToClipboard(text){
   if (navigator.clipboard && navigator.clipboard.writeText){
@@ -19106,6 +19250,7 @@ document.addEventListener("DOMContentLoaded", init);
 })();
 
 </script>
+<script src="jspdf.umd.min.js"></script>
 <script>
 /* Tema yöneticisi: kullanım türünü yalnızca görsel sınıfa dönüştürür;
    soru/puanlama/sonuç motoruna müdahale etmez. */
@@ -19134,6 +19279,7 @@ document.addEventListener("DOMContentLoaded", init);
     budget:"Size uygun seçenekleri gerçekçi bir aralıkta sıralayabilmemiz için bütçe tercihinizi belirtin."
   };
   var pendingFade = null;
+  var lastQuestionTitle = "";
   function rememberCurrentCard(event){
     if (!event.target.closest('.opt-tile,#stepNextBtn')) return;
     var card = document.querySelector('#wizardRoot .qstep-card');
@@ -19166,6 +19312,23 @@ document.addEventListener("DOMContentLoaded", init);
     ghost.style.height = rect.height + 'px';
     document.body.appendChild(ghost);
     window.setTimeout(function(){ if (ghost.parentNode) ghost.parentNode.removeChild(ghost); },1050);
+  }
+  function keepQuestionTopVisible(){
+    if (window.innerWidth > 720) return;
+    var card = document.querySelector('#wizardRoot .qstep-card');
+    var heading = card && card.querySelector('h2,h3');
+    if (!card || !heading) return;
+    var title = heading.textContent || "";
+    if (title === lastQuestionTitle) return;
+    lastQuestionTitle = title;
+    window.setTimeout(function(){
+      var activeCard = document.querySelector('#wizardRoot .qstep-card');
+      if (!activeCard) return;
+      var topbar = document.querySelector('.topbar');
+      var safeTop = (topbar ? topbar.getBoundingClientRect().height : 0) + 10;
+      var target = window.scrollY + activeCard.getBoundingClientRect().top - safeTop;
+      window.scrollTo({top:Math.max(0,target),behavior:'smooth'});
+    },80);
   }
   function injectQuestionNotes(){
     document.querySelectorAll('#wizardRoot .qstep-block[data-qid]').forEach(function(block){
@@ -19207,6 +19370,7 @@ document.addEventListener("DOMContentLoaded", init);
     }
     applyNatureTheme();
     injectQuestionNotes();
+    keepQuestionTopVisible();
     document.addEventListener('click',rememberCurrentCard,true);
     var wizard = document.getElementById("wizardRoot");
     if (wizard){
@@ -19214,6 +19378,7 @@ document.addEventListener("DOMContentLoaded", init);
         applyNatureTheme();
         injectQuestionNotes();
         playFadeOutIfStepChanged();
+        keepQuestionTopVisible();
       }).observe(wizard,{childList:true,subtree:true});
     }
     document.addEventListener("click",function(event){
