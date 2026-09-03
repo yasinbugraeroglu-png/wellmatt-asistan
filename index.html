@@ -872,6 +872,10 @@ body.wm-theme-baby .wizard-root{max-width:650px;margin-left:auto;margin-right:0}
   border-radius:22px;
   overflow:hidden;
   background:rgba(235,244,226,.73) !important;
+  position:sticky;
+  top:76px;
+  z-index:45;
+  box-shadow:0 14px 34px rgba(5,27,16,.24) !important;
 }
 #screen-results .pick-view-switcher{
   display:grid;
@@ -1065,6 +1069,25 @@ body.wm-theme-baby .wizard-root{max-width:650px;margin-left:auto;margin-right:0}
 #screen-results .compare-wrap::-webkit-scrollbar-corner{background:transparent}
 #screen-results table.compare th{color:#345441;background:rgba(220,233,211,.76)}
 #screen-results table.compare td{border-color:rgba(39,82,56,.13)}
+#screen-results table.compare td.metric-label{
+  color:#fff !important;
+  background:linear-gradient(135deg,rgba(25,78,52,.96),rgba(77,121,91,.94)) !important;
+  border-bottom-color:rgba(255,255,255,.16);
+  border-left:2px solid rgba(226,241,221,.92) !important;
+  border-right:2px solid rgba(226,241,221,.92) !important;
+}
+#screen-results table.compare th:first-child{
+  color:#fff !important;
+  background:#1d5339 !important;
+  border-top:2px solid rgba(226,241,221,.92) !important;
+  border-left:2px solid rgba(226,241,221,.92) !important;
+  border-right:2px solid rgba(226,241,221,.92) !important;
+  border-radius:14px 14px 0 0;
+}
+#screen-results table.compare tr:last-child td.metric-label{
+  border-bottom:2px solid rgba(226,241,221,.92) !important;
+  border-radius:0 0 14px 14px;
+}
 #screen-results table.compare th.prod-col,
 #screen-results table.compare td.prod-col{border-color:rgba(43,88,60,.23)}
 #screen-results table.compare .col-1,
@@ -1130,10 +1153,43 @@ body.wm-theme-baby .wizard-root{max-width:650px;margin-left:auto;margin-right:0}
 .qstep-card:has(.budget-slider-wrap) .qstep-head{text-align:center}
 .qstep-card:has(.budget-slider-wrap) .wm-question-note,
 .qstep-card:has(.budget-slider-wrap) > .qstep-sub{
-  margin-left:auto;
-  margin-right:auto;
+  margin:10px 22px 4px;
+  padding:10px 14px;
+  border:1px solid rgba(35,78,53,.18);
+  border-radius:13px;
+  color:#31513e;
+  background:rgba(250,252,244,.58);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.70);
   text-align:center;
 }
+.missing-question-alert{
+  margin:0 14px 16px;
+  padding:13px;
+  border:1px solid rgba(255,255,255,.70);
+  border-radius:16px;
+  color:#fff;
+  background:rgba(90,43,32,.86);
+  box-shadow:0 12px 28px rgba(35,17,10,.24);
+}
+.missing-question-alert[hidden]{display:none}
+.missing-question-alert p{margin:0 0 9px;font-size:12px;line-height:1.45}
+.missing-question-links{display:flex;flex-wrap:wrap;gap:7px}
+.missing-question-link{
+  appearance:none;
+  border:1px solid rgba(255,255,255,.72);
+  border-radius:999px;
+  padding:7px 10px;
+  color:#254633;
+  background:rgba(249,251,243,.94);
+  font-family:inherit;
+  font-size:11.5px;
+  font-weight:700;
+  line-height:1.25;
+  cursor:pointer;
+}
+.missing-question-link:hover{background:#fff}
+#calcBtn.needs-attention{box-shadow:0 0 0 3px rgba(255,239,202,.50),0 10px 22px rgba(24,77,51,.22)}
+body.print-layout #screen-results .pick-view-wrap{position:static}
 #screen-results.show .results-summary{animation:wmResultCardRise .58s .05s cubic-bezier(.16,1,.3,1) both}
 #screen-results.show .product-card{animation:wmResultCardRise .62s cubic-bezier(.16,1,.3,1) both}
 #screen-results.show .product-card:nth-child(1){animation-delay:.12s}
@@ -1167,6 +1223,7 @@ body.wm-theme-baby .wizard-root{max-width:650px;margin-left:auto;margin-right:0}
   #screen-results .results-toolbar{gap:7px}
   #screen-results .results-toolbar .btn{flex:1 1 120px}
   #screen-results .results-summary{padding:18px 16px}
+  #screen-results .pick-view-wrap{top:60px}
   #screen-results .pc-body{padding:13px}
   .progress-strip{margin-bottom:12px;padding:8px 11px;background:rgba(239,247,232,.64)}
   .missing-list,body.wm-theme-child .missing-list{max-width:none;margin-left:0;margin-right:0;padding:8px 10px;background:rgba(244,247,235,.66)}
@@ -1194,12 +1251,19 @@ body.wm-theme-baby .wizard-root{max-width:650px;margin-left:auto;margin-right:0}
   .step-nav .btn{min-height:44px}
   .step-nav > #stepBackBtn{padding-left:5px;padding-right:5px;font-size:11px}
   #calcBtn{padding:9px 8px;font-size:12.5px;line-height:1.15;white-space:normal;overflow-wrap:anywhere}
+  .qstep-card:has(.budget-slider-wrap) .wm-question-note,
+  .qstep-card:has(.budget-slider-wrap) > .qstep-sub{
+    margin:8px 14px 4px;
+    padding:10px 12px;
+  }
   .qstep-card:has(.budget-slider-wrap) .range-slider-endlabels{
     margin-top:8px;
-    padding:5px 9px;
-    border:1px solid rgba(255,255,255,.60);
+    padding:8px 11px;
+    border:1px solid rgba(35,78,53,.18);
     border-radius:10px;
-    background:rgba(13,59,39,.44);
+    color:#274b37 !important;
+    text-shadow:none;
+    background:rgba(250,252,244,.62);
   }
   .kbd-hint-bottom{display:none}
 }
@@ -18209,16 +18273,19 @@ function stepFullyAnswered(qid){
   return true;
 }
 
-function allRequiredAnswered(){
+function missingRequiredDetails(){
   var missing = [];
   var ans = WM.state.answers;
   WM.activeSteps(ans).forEach(function(q){
-    if (q.required && !isAnswered(q.id)) missing.push(WM.questionTitle(q, ans));
+    if (q.required && !isAnswered(q.id)) missing.push({qid:q.id,title:WM.questionTitle(q, ans)});
     var pq = WM.pairedQuestionFor(q, ans);
-    if (pq && pq.required && !isAnswered(pq.id)) missing.push(WM.questionTitle(pq, ans));
+    if (pq && pq.required && !isAnswered(pq.id)) missing.push({qid:q.id,title:WM.questionTitle(pq, ans)});
   });
-  if (!isAnswered("budget")) missing.push("Bütçe (belirtmediyseniz \"Bütçe sınırlamam yok\" seçin)");
+  if (!isAnswered("budget")) missing.push({qid:"budget",title:"Bütçe"});
   return missing;
+}
+function allRequiredAnswered(){
+  return missingRequiredDetails().map(function(item){return item.title;});
 }
 
 /* ---------------------------------------------------------------
@@ -18257,7 +18324,8 @@ function renderDots(steps, idx){
 function renderNav(steps, idx){
   var isLast = idx === steps.length - 1;
   var canBack = idx > 0;
-  var missing = allRequiredAnswered();
+  var missingDetails = missingRequiredDetails();
+  var missing = missingDetails.map(function(item){return item.title;});
   var allDone = missing.length === 0;
   // V8: bir soruyu değiştirmek için soru ekranına geri dönüldüğünde, tüm
   // sorular zaten cevaplanmışsa "İleri" butonunun yanında "Sonuçları
@@ -18267,13 +18335,18 @@ function renderNav(steps, idx){
     ? '<button type="button" class="btn btn-accent" id="showResultsBtn">Sonuçları Göster →</button>'
     : '';
   var primaryBtn = isLast
-    ? '<button type="button" class="btn btn-primary btn-lg" id="calcBtn" '+(missing.length?"disabled":"")+'>Benim yatağım hangisi? →</button>'
+    ? '<button type="button" class="btn btn-primary btn-lg'+(missing.length?' needs-attention':'')+'" id="calcBtn">Benim yatağım hangisi? →</button>'
     : '<button type="button" class="btn btn-primary" id="stepNextBtn">İleri →</button>';
+  var warning = (isLast && missing.length)
+    ? '<div class="missing-question-alert" id="missingQuestionAlert" hidden><p><strong>Sonucu hazırlayabilmemiz için aşağıdaki soruları tamamlayın:</strong></p><div class="missing-question-links">'
+      + missingDetails.map(function(item){return '<button type="button" class="missing-question-link" data-missing-goto="'+esc(item.qid)+'">'+esc(item.title)+'</button>';}).join("")
+      + '</div></div>'
+    : '';
   return '<div class="step-nav">'
     + '<button type="button" class="btn btn-outline" id="stepBackBtn" '+(canBack?"":"disabled")+'>← Geri</button>'
     + '<div class="step-nav-mid">'+ (missing.length ? '<span class="step-missing-hint">'+missing.length+' alan eksik</span>' : '<span class="step-missing-hint ok">Tüm zorunlu alanlar tamam</span>') +'</div>'
     + '<div class="step-nav-actions">'+showResultsBtn+primaryBtn+'</div>'
-    + '</div>';
+    + '</div>'+warning;
 }
 
 /** V11: "ÇİFT KİŞİLİK SEÇİMİNDE PARTNER İLE İLGİLİ AYNI CEVAPLARI İÇEREN
@@ -18368,7 +18441,19 @@ function bindStepEvents(q){
   var nextBtn = qEl("#stepNextBtn");
   if (nextBtn) nextBtn.addEventListener("click", goNext);
   var calc = qEl("#calcBtn");
-  if (calc) calc.addEventListener("click", function(){ if(!calc.disabled) showResults(); });
+  if (calc) calc.addEventListener("click", function(){
+    var missing = missingRequiredDetails();
+    if (!missing.length){ showResults(); return; }
+    var alert = qEl("#missingQuestionAlert");
+    if (alert){
+      alert.hidden = false;
+      alert.scrollIntoView({behavior:"smooth",block:"nearest"});
+    }
+    showToast(missing.length+" zorunlu soru eksik. Aşağıdaki başlıklardan tamamlayabilirsiniz.");
+  });
+  qAll('[data-missing-goto]',wizardRoot).forEach(function(btn){
+    btn.addEventListener("click",function(){goToStep(btn.getAttribute("data-missing-goto"),"jump");});
+  });
   var showResultsBtn = qEl("#showResultsBtn");
   if (showResultsBtn) showResultsBtn.addEventListener("click", function(){ showResults(); });
 
@@ -18465,7 +18550,7 @@ function bindBudgetEvents(){
 
 function refreshCalcState(){
   var calc = qEl("#calcBtn");
-  if (calc){ calc.disabled = allRequiredAnswered().length > 0; }
+  if (calc){ calc.classList.toggle("needs-attention",allRequiredAnswered().length > 0); }
 }
 
 function goNext(){
@@ -19098,13 +19183,13 @@ window.addEventListener("afterprint", cleanupPrintLayout);
 async function createResultsPdfFile(){
   var root = qEl("#screen-results");
   if (!root || !root.classList.contains("show")) throw new Error("Sonuç ekranı hazır değil.");
-  if (!window.jspdf || !window.jspdf.jsPDF) throw new Error("PDF bileşeni yüklenemedi.");
+  await ensurePdfLibrary();
   var canvas = document.createElement("canvas");
   canvas.width = 1240; canvas.height = 1754;
   var ctx = canvas.getContext("2d");
   function txt(value){ return String(value || "").replace(/\s+/g," ").trim(); }
   function rounded(x,y,w,h,r,fill,stroke){
-    ctx.beginPath(); ctx.roundRect(x,y,w,h,r); ctx.fillStyle=fill; ctx.fill();
+    r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fillStyle=fill;ctx.fill();
     if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
   }
   function wrapped(value,x,y,maxWidth,lineHeight,maxLines){
@@ -19171,6 +19256,22 @@ async function createResultsPdfFile(){
   return new File([blob],"wellmatt-yatak-onerileri.pdf",{type:"application/pdf"});
 }
 
+function ensurePdfLibrary(){
+  if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve();
+  if (window.WM_PDF_LIBRARY_PROMISE) return window.WM_PDF_LIBRARY_PROMISE;
+  window.WM_PDF_LIBRARY_PROMISE = new Promise(function(resolve,reject){
+    var script=document.createElement("script");
+    script.src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+    script.onload=function(){
+      if(window.jspdf&&window.jspdf.jsPDF) resolve();
+      else reject(new Error("PDF bileşeni başlatılamadı."));
+    };
+    script.onerror=function(){reject(new Error("PDF bileşeni yüklenemedi."));};
+    document.head.appendChild(script);
+  });
+  return window.WM_PDF_LIBRARY_PROMISE;
+}
+
 function downloadPdfFile(file){
   var url = URL.createObjectURL(file);
   var a = document.createElement("a");
@@ -19189,7 +19290,10 @@ async function shareSummary(){
   try{
     var file = await createResultsPdfFile();
     var payload = {files:[file],title:"WellMatt Yatak Seçim Rehberi",text:"Size özel WellMatt yatak önerileri"};
-    if (navigator.share && navigator.canShare && navigator.canShare({files:[file]})){
+    var canShareFile=false;
+    try{canShareFile=!!(navigator.share&&navigator.canShare&&navigator.canShare({files:[file]}));}catch(e){canShareFile=false;}
+    if (canShareFile){
+      showToast("PDF hazır. Paylaşım ekranı açılıyor…");
       await navigator.share(payload);
     } else {
       downloadPdfFile(file);
