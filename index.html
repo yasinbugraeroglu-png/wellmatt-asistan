@@ -16995,9 +16995,11 @@ var QUESTIONS = [
     sub:"Yalnızca bir seçenek işaretleyebilirsiniz",
     options:[
       {v:"ferahlik", l:"Anti Alerjik"},
+      {v:"omurga_sagligi", l:"Omurga Sağlığı"},
       {v:"dogal", l:"Doğal Malzeme"},
       {v:"cift_tarafli", l:"Çift Taraflı Kullanım"},
       {v:"uzun_omurlu", l:"Uzun Ömürlü"},
+      {v:"onceligim_yok", l:"Önceliğim Yok"},
     ]},
   { id:"complaints", title:"Uyku problemleri yaşıyor musunuz?", icon:"🩹", multi:true, required:true,
     skipFor:["baby","child"],
@@ -17022,7 +17024,7 @@ var QUESTIONS = [
     ]},
 ];
 
-var PRIORITY_LABEL = {"ferahlik":"Anti Alerjik","dogal":"Doğal Malzeme","cift_tarafli":"Çift Taraflı Kullanım","uzun_omurlu":"Uzun Ömürlü"};
+var PRIORITY_LABEL = {"ferahlik":"Anti Alerjik","omurga_sagligi":"Omurga Sağlığı","dogal":"Doğal Malzeme","cift_tarafli":"Çift Taraflı Kullanım","uzun_omurlu":"Uzun Ömürlü","onceligim_yok":"Önceliğim Yok"};
 var WEIGHT_LABEL = {"70kg_alti":"70 kg altı","70_84":"70–84 kg","85_99":"85–99 kg","100_uzeri":"100 kg ve üzeri"};
 var HEIGHT_LABEL = {"170_alti":"170 cm ve altı","171_180":"171–180 cm","180_uzeri":"180 cm ve üzeri"};
 var SLEEP_DEPTH_LABEL = {"hafif":"Hafif uyku","normal":"Normal uyku","agir":"Ağır uyku"};
@@ -17328,6 +17330,16 @@ function resolveFirmnessRange(a){
  *  eleme ("excluded"), kategori KISITLAMA ("restrictTo" -> yalnızca bu
  *  kategoriler), ve Organik kategorisine özel sertlik alt sınırı override'ı
  *  (madde 4-9, 12-13). */
+/** V22: "Yatak seçiminde önceliğiniz" için puanlama/kategori mantığında
+ *  kullanılan ETKİN öncelik. "Omurga Sağlığı" seçilirse Anti Alerjik
+ *  (ferahlik/coolingScore) kriterleri uygulanır; "Önceliğim Yok" seçilirse
+ *  bu soru için hiçbir kısıtlama/puanlama uygulanmaz (null). Ekranda gösterilen
+ *  etiket ise kullanıcının gerçek seçimidir (bkz. PRIORITY_LABEL). */
+function effectivePriority(a){
+  if (a.priority === "omurga_sagligi") return "ferahlik";
+  if (a.priority === "onceligim_yok") return null;
+  return a.priority || null;
+}
 function computeCategoryRules(a){
   var excluded = {};
   var restrictTo = null;
@@ -17368,10 +17380,11 @@ function computeCategoryRules(a){
   // 2'nin üzerinde olanlar (eşik filtreleri poolFor()'da uygulanır);
   // Uzun Ömürlü -> yalnızca Visco+Lateks kategorileri; Çift Taraflı Kullanım ->
   // mağazanın gönderdiği "ÇİFT TARAFLI KULLANIM" sütununda EVET işaretli ürünler.
-  if (a.priority === "ferahlik") coolingThresholdMin = 2;
-  if (a.priority === "dogal") naturalThresholdMin = 2;
-  if (a.priority === "uzun_omurlu") restrictTo = intersectRestrict(restrictTo, ["Visco Yataklar","Lateks Yataklar"]);
-  if (a.priority === "cift_tarafli") doubleSidedOnly = true;
+  var pr = effectivePriority(a);
+  if (pr === "ferahlik") coolingThresholdMin = 2;
+  if (pr === "dogal") naturalThresholdMin = 2;
+  if (pr === "uzun_omurlu") restrictTo = intersectRestrict(restrictTo, ["Visco Yataklar","Lateks Yataklar"]);
+  if (pr === "cift_tarafli") doubleSidedOnly = true;
   // V11 Soru12 (uyku problemleri redesign): omuz ağrıları / boyun tutulması /
   // sırt ağrısı / gece sık sık uyanma -> yalnızca Visco+Lateks önerilir.
   // Horlama, kategori kısıtlaması yapmaz — yalnızca yastık kartı ekler
@@ -17530,7 +17543,7 @@ function scoreProduct(product, answers){
   var wR = scoreWeight(product, a.weightRange);
   var fR = isBabyChild ? {score:0, max:20} : scoreFeel(product, a.feel);
   var cR = isBabyChild ? {score:0, max:15} : scoreCooling(product, effectiveSweating(a));
-  var mR = scoreMaterialPriority(product, a.priority, isBabyChild);
+  var mR = scoreMaterialPriority(product, effectivePriority(a), isBabyChild);
   var koR = scoreComplaints(product, a.complaints);
 
   var balanceNotes = [];
@@ -17651,8 +17664,9 @@ function poolFor(a, opts){
     // ayrı kategorisi olduğu için burada uygulanırsa havuz her zaman boş
     // kalır) bilinçli olarak bebek/çocuk havuzuna UYGULANMAZ — bu, README'de
     // açıkça belirtilen bir tasarım kararıdır.
-    var naturalMin = a.priority === "dogal" ? 2 : null;
-    var doubleSidedOnly = a.priority === "cift_tarafli";
+    var prEff = effectivePriority(a);
+    var naturalMin = prEff === "dogal" ? 2 : null;
+    var doubleSidedOnly = prEff === "cift_tarafli";
     return window.WELLMATT_PRODUCTS.filter(function(p){
       if (p.isComplementary) return false;
       if (p.category !== "Bebek ve Çocuk Yatakları") return false;
@@ -18870,7 +18884,7 @@ function reasonsFor(item){
     }
     // V11: Soru11 artık tek seçim; "ferahlık" bebek/çocukta hâlâ dikkate
     // alınmadığı için (bkz. app.js priorityValue) burada gösterilmez.
-    if (a.priority && a.priority !== "ferahlik"){
+    if (a.priority && a.priority !== "ferahlik" && a.priority !== "omurga_sagligi" && a.priority !== "onceligim_yok"){
       reasons.push(WM.PRIORITY_LABEL[a.priority] + " önceliğiniz " + describePriorityFit(p, a.priority));
     }
   } else {
@@ -18889,7 +18903,7 @@ function reasonsFor(item){
     if (effSweat){
       reasons.push((WM.SWEAT_LABEL[effSweat]).toLowerCase() + " hassasiyetiniz için " + describeCoolingFit(p, effSweat));
     }
-    if (a.priority){
+    if (a.priority && a.priority !== "onceligim_yok"){
       reasons.push(WM.PRIORITY_LABEL[a.priority] + " önceliğiniz " + describePriorityFit(p, a.priority));
     }
   }
@@ -18914,6 +18928,9 @@ function describeCoolingFit(p, sweat){
 }
 function describePriorityFit(p, pr){
   var frag = layerFragment(p);
+  if (pr === "omurga_sagligi"){
+    return frag + " katmanı, omurga hattını dengeli biçimde destekleyen yapısıyla bu önceliğinizle örtüşüyor.";
+  }
   if (pr === "ferahlik"){
     // V16: "Ferahlık" seçeneği "Anti Alerjik" olarak yeniden adlandırıldı;
     // açıklama alerji odaklı. Hesaplama (coolingScore) değişmedi.
