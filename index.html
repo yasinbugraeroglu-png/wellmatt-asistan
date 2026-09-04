@@ -612,7 +612,7 @@ footer.appfoot{ text-align:center; font-size:11px; color:var(--ink-faint); paddi
 .pdf-preview-actions{display:flex;gap:8px}
 .pdf-preview-actions .btn{min-height:38px;color:#173b29;background:#f5f8f0;border-color:rgba(255,255,255,.7)}
 .pdf-preview-stage{flex:1;overflow:auto;padding:18px;background:#242424;text-align:center;-webkit-overflow-scrolling:touch}
-.pdf-preview-page{display:block;width:min(100%,920px);height:auto;margin:0 auto;background:#fff;box-shadow:0 14px 44px rgba(0,0,0,.42)}
+.pdf-preview-page{display:block;width:min(100%,920px);height:auto;margin:0 auto 18px;background:#fff;box-shadow:0 14px 44px rgba(0,0,0,.42)}
 body.pdf-preview-open{overflow:hidden}
 
 /* Responsive */
@@ -16934,7 +16934,7 @@ var QUESTIONS = [
   { id:"priority", title:"Yatak seçiminde önceliğiniz nedir?", icon:"🎯", multi:false, required:true,
     sub:"Yalnızca bir seçenek işaretleyebilirsiniz",
     options:[
-      {v:"ferahlik", l:"Ferahlık"},
+      {v:"ferahlik", l:"Anti Alerjik"},
       {v:"dogal", l:"Doğal Malzeme"},
       {v:"cift_tarafli", l:"Çift Taraflı Kullanım"},
       {v:"uzun_omurlu", l:"Uzun Ömürlü"},
@@ -16962,7 +16962,7 @@ var QUESTIONS = [
     ]},
 ];
 
-var PRIORITY_LABEL = {"ferahlik":"Ferahlık","dogal":"Doğal Malzeme","cift_tarafli":"Çift Taraflı Kullanım","uzun_omurlu":"Uzun Ömürlü"};
+var PRIORITY_LABEL = {"ferahlik":"Anti Alerjik","dogal":"Doğal Malzeme","cift_tarafli":"Çift Taraflı Kullanım","uzun_omurlu":"Uzun Ömürlü"};
 var WEIGHT_LABEL = {"70kg_alti":"70 kg altı","70_84":"70–84 kg","85_99":"85–99 kg","100_uzeri":"100 kg ve üzeri"};
 var HEIGHT_LABEL = {"170_alti":"170 cm ve altı","171_180":"171–180 cm","180_uzeri":"180 cm ve üzeri"};
 var SLEEP_DEPTH_LABEL = {"hafif":"Hafif uyku","normal":"Normal uyku","agir":"Ağır uyku"};
@@ -17688,7 +17688,7 @@ function exclusionReason(p, a){
     return "Bu ürün, seçilen kriterler nedeniyle öneri kapsamı dışında kaldı.";
   }
   if (catRules.coolingThresholdMin != null && !(p.coolingScore > catRules.coolingThresholdMin)){
-    return "\"Ferahlık\" önceliği için Serinlik/Ferahlık puanı (" + p.coolingScore + "/10), gereken düzeyin (2'nin üzeri) altında kaldı.";
+    return "\"Anti Alerjik\" önceliği için Serinlik/Ferahlık puanı (" + p.coolingScore + "/10), gereken düzeyin (2'nin üzeri) altında kaldı.";
   }
   if (catRules.naturalThresholdMin != null && !(p.naturalMaterialScore > catRules.naturalThresholdMin)){
     return "\"Doğal Malzeme\" önceliği için Doğal Malzeme puanı (" + p.naturalMaterialScore + "/10), gereken düzeyin (2'nin üzeri) altında kaldı.";
@@ -18855,9 +18855,11 @@ function describeCoolingFit(p, sweat){
 function describePriorityFit(p, pr){
   var frag = layerFragment(p);
   if (pr === "ferahlik"){
+    // V16: "Ferahlık" seçeneği "Anti Alerjik" olarak yeniden adlandırıldı;
+    // açıklama alerji odaklı. Hesaplama (coolingScore) değişmedi.
     return p.coolingScore >= 8
-      ? frag + " katmanının yüksek hava geçirgenliği bu önceliğinizle birebir örtüşüyor."
-      : frag + " katmanının hava kanallı yapısı bu önceliğinizle örtüşüyor.";
+      ? frag + " katmanının nefes alan, nem ve toz akarı barındırmayan yapısı anti alerjik önceliğinizle birebir örtüşüyor."
+      : frag + " katmanının hava kanallı, nemi uzaklaştıran yapısı anti alerjik önceliğinizle örtüşüyor.";
   }
   if (pr === "dogal"){
     return p.naturalMaterialScore >= 9
@@ -19233,22 +19235,67 @@ function cleanupPrintLayout(){
 window.addEventListener("beforeprint", preparePrintLayout);
 window.addEventListener("afterprint", cleanupPrintLayout);
 
-/** Sonuç ekranını A4 dikey ölçüsüne orantılı sığdırarak daima tek sayfalık
- *  gerçek bir PDF dosyası üretir. Kütüphaneler final klasöründe yerel tutulur;
- *  GitHub Pages'te üçüncü taraf ağ isteğine ihtiyaç duyulmaz. */
+/** V16: Sonuç ekranını her filtre görünümü (En Uygun / En Doğal / En Hesaplı)
+ *  için ayrı bir A4 dikey sayfa olarak çizer ve 3 sayfalık gerçek bir PDF
+ *  dosyası üretir. Her sayfanın üstünde ekrandaki "Filtrele" çubuğu yer alır;
+ *  o sayfanın ürünlerini belirleyen seçenek yeşil (aktif) olarak gösterilir.
+ *  Kütüphaneler final klasöründe yerel tutulur; GitHub Pages'te üçüncü taraf
+ *  ağ isteğine ihtiyaç duyulmaz. */
 async function createResultsPdfFile(){
   var root = qEl("#screen-results");
   if (!root || !root.classList.contains("show")) throw new Error("Sonuç ekranı hazır değil.");
+  if (!lastResults) throw new Error("Sonuç verisi hazır değil.");
   await ensurePdfLibrary();
+  var logo=document.querySelector(".topbar-logo");
+  if(logo&&logo.decode){try{await logo.decode();}catch(e){}}
+
+  var views = PICK_VIEWS.filter(function(v){
+    return !!((lastResults.picksByView && lastResults.picksByView[v.id]) || lastResults.picks);
+  });
+  var pageCount = views.length || 1;
+  var previewDataUrls = [];
+  var originalView = currentPickView;
+  var scrollX = window.scrollX, scrollY = window.scrollY;
+  try{
+    views.forEach(function(v, idx){
+      // İlgili görünümün kartları/tablosu DOM'a çizilir, sayfa ondan okunur.
+      renderResultsScreen(lastResults, v.id);
+      var canvas = drawResultsPdfPage(root, logo, v.id, idx+1, pageCount);
+      previewDataUrls.push(canvas.toDataURL("image/jpeg",0.92));
+    });
+  } finally {
+    // Ekran, kullanıcının seçili filtresine geri döndürülür.
+    renderResultsScreen(lastResults, originalView);
+    window.scrollTo(scrollX, scrollY);
+  }
+
+  var PDF=window.jspdf.jsPDF;
+  var pdf=new PDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});
+  previewDataUrls.forEach(function(url, i){
+    if (i>0) pdf.addPage("a4","portrait");
+    pdf.addImage(url,"JPEG",0,0,210,297,undefined,"FAST");
+  });
+  window.WM_LAST_PDF_PAGES=pdf.getNumberOfPages();
+  root.setAttribute("data-last-pdf-pages",String(pdf.getNumberOfPages()));
+  var blob=pdf.output("blob"),file=new File([blob],"wellmatt-yatak-onerileri.pdf",{type:"application/pdf"});
+  file.wmPreviewDataUrl=previewDataUrls[0];
+  file.wmPreviewDataUrls=previewDataUrls;
+  return file;
+}
+
+/** Tek bir A4 sayfayı (1240×1754) canvas'a çizer. activeView: bu sayfanın
+ *  ürünlerini belirleyen filtre (PICK_VIEWS id'si). */
+function drawResultsPdfPage(root, logo, activeView, pageNo, pageCount){
   var canvas = document.createElement("canvas");
   canvas.width = 1240; canvas.height = 1754;
   var ctx = canvas.getContext("2d");
-  var logo=document.querySelector(".topbar-logo");
-  if(logo&&logo.decode){try{await logo.decode();}catch(e){}}
   function txt(value){ return String(value || "").replace(/\s+/g," ").trim(); }
-  function rounded(x,y,w,h,r,fill,stroke){
-    r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();ctx.fillStyle=fill;ctx.fill();
-    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=2;ctx.stroke();}
+  function roundedPath(x,y,w,h,r){
+    r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+  }
+  function rounded(x,y,w,h,r,fill,stroke,lineWidth){
+    roundedPath(x,y,w,h,r);ctx.fillStyle=fill;ctx.fill();
+    if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=lineWidth||2;ctx.stroke();}
   }
   function wrapped(value,x,y,maxWidth,lineHeight,maxLines){
     var words=txt(value).split(" "),line="",lines=[];
@@ -19271,15 +19318,49 @@ async function createResultsPdfFile(){
     ctx.drawImage(logoCanvas,58,30,270,57);
   }
   ctx.font="400 23px Arial, sans-serif";ctx.fillStyle="rgba(255,255,255,.86)";ctx.fillText("Size özel yatak seçim raporu",58,126);
-  ctx.font="400 18px Arial, sans-serif";ctx.fillText(new Date().toLocaleDateString("tr-TR"),1040,72);
+  ctx.font="400 18px Arial, sans-serif";ctx.textAlign="right";
+  ctx.fillText(new Date().toLocaleDateString("tr-TR"),1182,72);
+  ctx.fillText("Sayfa "+pageNo+" / "+pageCount,1182,126);
+  ctx.textAlign="left";
 
   ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Uyku tercihleriniz",58,230);
   var chips=qAll(".chip",root).map(function(el){return txt(el.textContent);});
   ctx.font="600 17px Arial, sans-serif";var cx=58,cy=256;
   chips.forEach(function(label){var w=Math.min(270,ctx.measureText(label).width+30);if(cx+w>1182){cx=58;cy+=42;}rounded(cx,cy,w,32,16,"#dfeadb","#a7bea8");ctx.fillStyle="#244a34";ctx.fillText(label,cx+15,cy+22);cx+=w+10;});
 
-  var productsTitleY=Math.max(365,cy+82),cardsY=productsTitleY+30;
+  var productsTitleY=Math.max(365,cy+82);
   ctx.fillStyle="#173827";ctx.font="700 29px Arial, sans-serif";ctx.fillText("Size özel seçtiğimiz yataklar",58,productsTitleY);
+
+  /* Filtrele çubuğu — ekrandaki .pick-view-wrap görünümünün canvas karşılığı.
+     Bu sayfanın ürünlerini belirleyen seçenek yeşil (aktif) çizilir. */
+  var filterY=productsTitleY+22, filterH=104, filterX=48, filterW=1144;
+  rounded(filterX,filterY,filterW,filterH,24,"#e6efdc",null);
+  ctx.fillStyle="#5b6d60";ctx.font="700 15px Arial, sans-serif";ctx.fillText("Filtrele",filterX+16,filterY+27);
+  var swX=filterX+14, swY=filterY+38, swW=filterW-28, swH=54;
+  rounded(swX,swY,swW,swH,18,"#f3f7ea","rgba(35,78,53,.22)",1.5);
+  var gap=6, inner=swW-2*gap, activeIdx=0;
+  PICK_VIEWS.forEach(function(v,i){ if(v.id===activeView) activeIdx=i; });
+  var weights=PICK_VIEWS.map(function(v,i){ return i===activeIdx?1.14:1; });
+  var totalW=weights.reduce(function(a,b){return a+b;},0);
+  var unit=(inner-gap*(PICK_VIEWS.length-1))/totalW, bx=swX+gap;
+  PICK_VIEWS.forEach(function(v,i){
+    var bw=unit*weights[i], by=swY+gap, bh=swH-2*gap, active=(i===activeIdx);
+    if(active){
+      ctx.save();ctx.shadowColor="rgba(19,68,43,.30)";ctx.shadowBlur=14;ctx.shadowOffsetY=6;
+      var g=ctx.createLinearGradient(bx,by,bx+bw,by+bh);g.addColorStop(0,"#1b5137");g.addColorStop(1,"#5d8061");
+      rounded(bx,by,bw,bh,13,g,null);ctx.restore();
+      rounded(bx,by,bw,bh,13,"rgba(0,0,0,0)","rgba(225,238,214,.85)",3);
+      ctx.fillStyle="#fff";
+    }else{
+      rounded(bx,by,bw,bh,13,"#f8fbf1","rgba(35,78,53,.18)",1.5);
+      ctx.fillStyle="#274b37";
+    }
+    ctx.font="700 18px Arial, sans-serif";ctx.textBaseline="middle";
+    ctx.fillText(v.label,bx+16,by+bh/2+1);ctx.textBaseline="alphabetic";
+    bx+=bw+gap;
+  });
+
+  var cardsY=filterY+filterH+22;
   var cards=qAll(".rec-grid > .product-card",root).slice(0,3),cardW=360,cardH=310;
   cards.forEach(function(card,i){
     var x=58+i*(cardW+22),y=cardsY;
@@ -19291,9 +19372,9 @@ async function createResultsPdfFile(){
     wrapped(card.querySelector(".pc-cat")&&card.querySelector(".pc-cat").textContent,x+20,y+103,cardW-40,20,1);
     var price=card.querySelector(".pc-price"),sizeLine=price&&price.querySelector(".size-line"),amount=price&&price.querySelector(".amount"),cash=price&&price.querySelector(".cash-price");
     var amountMain=amount?Array.prototype.filter.call(amount.childNodes,function(n){return n.nodeType===3;}).map(function(n){return n.nodeValue;}).join(" "):"";
-    var unit=amount&&amount.querySelector(".unit");
+    var unitEl=amount&&amount.querySelector(".unit");
     ctx.fillStyle="#486453";ctx.font="600 14px Arial, sans-serif";wrapped(sizeLine&&sizeLine.textContent,x+20,y+140,cardW-40,19,1);
-    ctx.fillStyle="#1e5237";ctx.font="700 17px Arial, sans-serif";wrapped(txt(amountMain)+(unit?" "+txt(unit.textContent):""),x+20,y+168,cardW-40,21,2);
+    ctx.fillStyle="#1e5237";ctx.font="700 17px Arial, sans-serif";wrapped(txt(amountMain)+(unitEl?" "+txt(unitEl.textContent):""),x+20,y+168,cardW-40,21,2);
     ctx.fillStyle="#315f43";ctx.font="700 14px Arial, sans-serif";wrapped(cash&&cash.textContent,x+20,y+215,cardW-40,18,1);
     ctx.fillStyle="#3c5847";ctx.font="400 15px Arial, sans-serif";
     var reasons=qAll(".pc-reasons li",card).slice(0,2).map(function(li){return "• "+txt(li.textContent);}).join(" ");
@@ -19315,18 +19396,9 @@ async function createResultsPdfFile(){
   ctx.fillStyle="#173827";ctx.font="700 27px Arial, sans-serif";ctx.fillText("Tamamlayıcı ürünler",58,complementaryTitleY);
   var minis=qAll(".complementary-grid .mini-card",root).slice(0,4);
   minis.forEach(function(card,i){var x=58+(i%2)*562,y=miniY+Math.floor(i/2)*126,priceEl=card.querySelector(".mini-price"),current=priceEl?Array.prototype.filter.call(priceEl.childNodes,function(n){return n.nodeType===3;}).map(function(n){return n.nodeValue;}).join(" "):"";rounded(x,y,540,112,18,"#f8faf3","#b5c9b5");ctx.fillStyle="#234936";ctx.font="700 18px Arial, sans-serif";wrapped(card.querySelector("h4")&&card.querySelector("h4").textContent,x+18,y+29,500,20,2);ctx.fillStyle="#315f43";ctx.font="700 15px Arial, sans-serif";wrapped(txt(current),x+18,y+70,500,18,1);ctx.fillStyle="#65766a";ctx.font="400 13px Arial, sans-serif";wrapped(card.querySelector(".mini-reason")&&card.querySelector(".mini-reason").textContent,x+18,y+94,500,15,1);});
-  ctx.fillStyle="#466353";ctx.font="400 15px Arial, sans-serif";ctx.fillText("Fiyatlar ve stok durumu sipariş öncesinde doğrulanmalıdır.",58,1692);
-  ctx.textAlign="right";ctx.fillText("WellMatt.com",1182,1692);ctx.textAlign="left";
-
-  var PDF=window.jspdf.jsPDF;
-  var pdf=new PDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});
-  var previewDataUrl=canvas.toDataURL("image/jpeg",0.92);
-  pdf.addImage(previewDataUrl,"JPEG",0,0,210,297,undefined,"FAST");
-  window.WM_LAST_PDF_PAGES=pdf.getNumberOfPages();
-  root.setAttribute("data-last-pdf-pages",String(pdf.getNumberOfPages()));
-  var blob=pdf.output("blob"),file=new File([blob],"wellmatt-yatak-onerileri.pdf",{type:"application/pdf"});
-  file.wmPreviewDataUrl=previewDataUrl;
-  return file;
+  ctx.fillStyle="#466353";ctx.font="400 15px Arial, sans-serif";ctx.fillText("Fiyatlar ve stok durumu sipariş öncesinde doğrulanmalıdır.",58,1706);
+  ctx.textAlign="right";ctx.fillText("WellMatt.com",1182,1706);ctx.textAlign="left";
+  return canvas;
 }
 
 function ensurePdfLibrary(){
@@ -19366,7 +19438,7 @@ function downloadPdfFile(file){
 async function shareSummary(){
   var btn = qEl("#shareBtn");
   if (btn) btn.disabled = true;
-  showToast("Tek sayfalık PDF hazırlanıyor…");
+  showToast("3 sayfalık PDF hazırlanıyor…");
   try{
     var file = await createResultsPdfFile();
     var payload = {files:[file],title:"WellMatt Yatak Seçim Rehberi",text:"Size özel WellMatt yatak önerileri"};
@@ -19390,10 +19462,10 @@ async function shareSummary(){
 }
 async function previewResultsPdf(){
   try{
-    showToast("Tek sayfalık PDF hazırlanıyor…");
+    showToast("3 sayfalık PDF hazırlanıyor…");
     var file=await createResultsPdfFile();
     showPdfPreview(file);
-    showToast("Tek sayfalık PDF hazır.");
+    showToast("3 sayfalık PDF hazır.");
   }catch(err){
     showToast("PDF hazırlanamadı. Lütfen yeniden deneyin.");
     console.error(err);
@@ -19401,11 +19473,12 @@ async function previewResultsPdf(){
 }
 function showPdfPreview(file){
   var old=qEl("#pdfPreviewOverlay");if(old) old.remove();
+  var pages=file.wmPreviewDataUrls||[file.wmPreviewDataUrl];
   var overlay=document.createElement("div");
   overlay.className="pdf-preview-overlay";overlay.id="pdfPreviewOverlay";
-  overlay.innerHTML='<div class="pdf-preview-bar"><span class="pdf-preview-title">WellMatt — Tek sayfalık PDF</span><div class="pdf-preview-actions"><button type="button" class="btn btn-sm" id="pdfDownloadNow">PDF’i indir</button><button type="button" class="btn btn-sm" id="pdfPreviewClose">Kapat</button></div></div><div class="pdf-preview-stage"><img class="pdf-preview-page" alt="WellMatt tek sayfalık PDF ön izlemesi"></div>';
+  var imgs=pages.map(function(url,i){return '<img class="pdf-preview-page" alt="WellMatt PDF ön izlemesi — sayfa '+(i+1)+'" src="'+url+'">';}).join("");
+  overlay.innerHTML='<div class="pdf-preview-bar"><span class="pdf-preview-title">WellMatt — '+pages.length+' sayfalık PDF</span><div class="pdf-preview-actions"><button type="button" class="btn btn-sm" id="pdfDownloadNow">PDF’i indir</button><button type="button" class="btn btn-sm" id="pdfPreviewClose">Kapat</button></div></div><div class="pdf-preview-stage">'+imgs+'</div>';
   document.body.appendChild(overlay);document.body.classList.add("pdf-preview-open");
-  overlay.querySelector(".pdf-preview-page").src=file.wmPreviewDataUrl;
   overlay.querySelector("#pdfDownloadNow").addEventListener("click",function(){downloadPdfFile(file);});
   function closePreview(){overlay.remove();document.body.classList.remove("pdf-preview-open");}
   overlay.querySelector("#pdfPreviewClose").addEventListener("click",closePreview);
