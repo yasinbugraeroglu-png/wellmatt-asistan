@@ -557,6 +557,49 @@ table.compare .prod-col-name{ display:inline-block; }
 /* V12: 3'lü ana öneri ızgarasının ALTINDA, boyun/horlama için enjekte
    edilen yastık kartlarının küçük ve yatay gösterildiği ayrı satır. Ana
    .rec-grid'in 3'lü düzenini etkilemez. */
+/* ---------- V16: "Neden önermiyoruz?" bölümü ---------- */
+.whynot-wrap{ margin-top:22px; }
+.whynot-wrap h2.section-title{ margin-bottom:6px; }
+.whynot-sub{ margin:0 0 12px; font-size:12.5px; line-height:1.5; color:var(--ink-soft); }
+.whynot-table{
+  display:flex; flex-direction:column; gap:0;
+  border:1px solid var(--border-strong,#cfd8d3); border-radius:var(--radius,16px); overflow:hidden;
+  background:#fff; box-shadow:var(--shadow);
+}
+.whynot-row{ display:grid; grid-template-columns:58px 1fr; border-bottom:1px solid rgba(0,0,0,.06); }
+.whynot-row:last-child{ border-bottom:none; }
+.whynot-cell{ padding:14px 16px; }
+.whynot-idx{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  border-right:1px solid rgba(0,0,0,.06);
+}
+.whynot-icon{ font-size:20px; line-height:1; }
+.whynot-no{
+  width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:800; color:#fff; background:var(--whynot-accent,#0d3b34);
+}
+.whynot-title{ font-size:13.5px; font-weight:800; color:var(--whynot-ink,#1c2624); line-height:1.35; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.whynot-who{
+  font-size:10.5px; font-weight:700; letter-spacing:.3px; text-transform:uppercase;
+  padding:2px 8px; border-radius:999px; color:var(--whynot-accent,#0d3b34);
+  background:rgba(255,255,255,.75); border:1px solid var(--whynot-accent,#0d3b34);
+}
+.whynot-text{ margin:7px 0 0; font-size:12.5px; line-height:1.6; color:var(--ink); }
+.whynot-action{ margin-top:10px; min-height:34px; font-size:12px; }
+/* Her satır farklı renk */
+.whynot-c0{ background:#fff4e6; --whynot-accent:#c2652a; --whynot-ink:#6b3410; }
+.whynot-c1{ background:#e9f5ec; --whynot-accent:#2e7d4f; --whynot-ink:#1c4a31; }
+.whynot-c2{ background:#e8f2fb; --whynot-accent:#2563a8; --whynot-ink:#173f6c; }
+.whynot-c3{ background:#f1ecfa; --whynot-accent:#6d4fb3; --whynot-ink:#3f2b73; }
+.whynot-c4{ background:#fdeceb; --whynot-accent:#c4443a; --whynot-ink:#7a221b; }
+.whynot-c5{ background:#fbf6dc; --whynot-accent:#a67c1a; --whynot-ink:#5f4708; }
+@media (max-width:560px){
+  .whynot-row{ grid-template-columns:46px 1fr; }
+  .whynot-cell{ padding:12px 12px; }
+  .whynot-icon{ font-size:17px; }
+}
+#screen-results .whynot-wrap h2.section-title .n::before{ content:"!"; font-weight:900; }
+
 .accessory-row{ display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; }
 .accessory-row .product-card.accessory-card{
   flex:1 1 320px; max-width:480px; flex-direction:row;
@@ -1163,6 +1206,12 @@ body.wm-theme-baby .wizard-root{max-width:650px;margin-left:auto;margin-right:0}
 .qstep-card:has(.budget-slider-wrap) > .qstep-sub{
   margin:10px 22px 4px;
   padding:10px 14px;
+  /* V16: bütçe ekranındaki beyaz bilgi balonları pencerede ortalanır
+     (.qstep-sub'ın 480px max-width'i sola yaslıyordu). */
+  max-width:none;
+  margin-left:22px;
+  margin-right:22px;
+  text-align:center;
   border:1px solid rgba(35,78,53,.18);
   border-radius:13px;
   color:#31513e;
@@ -1279,6 +1328,7 @@ body.print-layout #screen-results .pick-view-wrap{position:static}
   .qstep-card:has(.budget-slider-wrap) > .qstep-sub{
     margin:8px 14px 4px;
     padding:10px 12px;
+    max-width:none;
   }
   .qstep-card:has(.budget-slider-wrap) .range-slider-endlabels{
     margin-top:8px;
@@ -19117,6 +19167,84 @@ function scrollToFirstProductCard(){
   });});
 }
 
+/* ---------------------------------------------------------------
+   V16: "NEDEN ÖNERMİYORUZ?" — cevaplara göre hangi yatak türlerinin
+   neden önerilmediğini açıklayan, satır satır ve her satırı farklı
+   renkte bir bölüm. Ürün kartlarının hemen altında gösterilir.
+   Bebek/çocuk akışında bu sorular sorulmadığı için bölüm görünmez.
+   --------------------------------------------------------------- */
+var WHY_NOT_RULES = [
+  { id:"yuzustu", qid:"sleepPosition", icon:"🙇",
+    test:function(a){ return Array.isArray(a.sleepPosition) && a.sleepPosition.indexOf("yuzustu")!==-1; },
+    testPartner:function(a){ return Array.isArray(a.partnerSleepPosition) && a.partnerSleepPosition.indexOf("yuzustu")!==-1; },
+    title:"Yüzüstü uyuyorsunuz — yumuşak ve visko yataklar neden uygun değil?",
+    text:"Yüzüstü uyuma alışkanlığınız olduğu için özellikle pelvis (leğen) bölgesinin yatağa fazla gömülmemesini istiyoruz. Bu sayede omurganız doğal hizasını korur; bel ve kalça bölgenizdeki hassasiyet artmaz. Bu nedenle yumuşak yataklar ile vücudu içine alan visko yataklar tercih edilmemelidir. Yüzüstü uyuyup visko yatak kullanan kişilerde bel ve sırt bölgesinde ciddi ağrılar geliştiği bilimsel araştırmalarda gözlemlenmiştir." },
+  { id:"yan", qid:"sleepPosition", icon:"🛌",
+    test:function(a){ return Array.isArray(a.sleepPosition) && a.sleepPosition.indexOf("yan")!==-1; },
+    testPartner:function(a){ return Array.isArray(a.partnerSleepPosition) && a.partnerSleepPosition.indexOf("yan")!==-1; },
+    title:"Yan yatıyorsunuz — yaylı yataklarda konfor katmanı neden önemli?",
+    text:"Yan yatıyorsanız seçtiğiniz yatağın mümkünse yaysız olmasını öneriyoruz. Yaylı bir yatak tercih edecekseniz, yayın üzerindeki konfor katmanlarının toplam kalınlığı en az omuz genişliğinizden boynunuza kadar olan mesafe kadar olmalıdır; aksi hâlde omzunuz yatağa yeterince gömülemez ve omurganız hizadan çıkar. Yan yatan ve yaylı yatak kullanan kullanıcılarla yapılan araştırmalarda, konfor katmanı yeterli olmadığında kol uyuşmaları, omuz ağrıları ve boyun fıtığı gözlemlenmektedir." },
+  { id:"hafif", qid:"sleepDepth", icon:"🌙",
+    test:function(a){ return a.sleepDepth==="hafif"; },
+    testPartner:function(a){ return a.partnerSleepDepth==="hafif"; },
+    title:"Hafif uykunuz var — yaylı yataklar neden önerilmiyor?",
+    text:"Halk arasında “tilki uykusu” olarak adlandırılan hafif bir uykunuz varsa, her hareketi yatağın geneline ileten ve fazla titreşim yaratan yaylı modeller yerine, hareketi olduğu yerde sönümleyen yaysız (lateks, visko ya da doğal dolgulu) yatakların kullanımını öneriyoruz. Böylece partnerinizin dönmesi ya da sizin küçük hareketleriniz uykunuzu bölmez." },
+  { id:"terleme", qid:"sweating", icon:"💧",
+    test:function(a){ return a.sweating==="orta" || a.sweating==="cok"; },
+    testPartner:function(a){ return a.partnerSweating==="orta" || a.partnerSweating==="cok"; },
+    title:"Uykuda fazla terliyorsunuz — visko yataklar neden önerilmiyor?",
+    text:"Uykunuzda fazla terleyen bir yapınız varsa visko ve visko jel yatakları size önermiyoruz. Visko jel yataklarımızın serinletici bir etkisi olmasına rağmen visko malzeme vücudu içine alan bir yapıya sahiptir; bu gömülme hissi vücudunuz ile yatak arasındaki hava dolaşımını azaltır, yatağınız sizi sıcak tutabilir ve terlemeniz tetiklenebilir. Hava kanallı lateks ya da doğal dolgulu yataklar bu ihtiyaca çok daha iyi yanıt verir." },
+  { id:"uzun_omurlu", qid:"priority", icon:"⏳",
+    test:function(a){ return a.priority==="uzun_omurlu"; },
+    title:"Önceliğiniz uzun ömür — paket yaylı organik yataklar neden önerilmiyor?",
+    text:"Doğal pamuk, yün ve at yelesi gibi organik konfor malzemeleri, yapıları gereği yıllar içinde vücudunuza göre şekil alabilir ve ezilebilir. Uzun ömürlü kullanım önceliğiniz olduğu için paket yaylı organik yataklarımızı size önermedik; formunu çok daha uzun süre koruyan lateks ve visko modellere öncelik verdik." },
+  { id:"dogal", qid:"priority", icon:"🌿", action:{qid:"priority", label:"Öncelik seçimimi değiştir"},
+    test:function(a){ return a.priority==="dogal"; },
+    title:"Önceliğiniz doğal malzeme — visko modeller neden önerilmiyor?",
+    text:"Önceliğiniz doğal malzeme olduğu için sentetik esaslı visko yatak modellerimizi size önermedik. Visko modeller arasından size uygun olanları görmek isterseniz öncelik seçiminizi değiştirmeniz yeterlidir." },
+];
+
+function whyNotRows(){
+  var a = WM.state.answers || {};
+  if (a.usageType === "baby" || a.usageType === "child") return [];
+  var isCouple = a.usageType === "couple";
+  var rows = [];
+  WHY_NOT_RULES.forEach(function(r){
+    var me = !!r.test(a);
+    var partner = isCouple && typeof r.testPartner === "function" ? !!r.testPartner(a) : false;
+    if (!me && !partner) return;
+    var who = "";
+    if (isCouple && (me || partner)){
+      who = me && partner ? "Siz ve partneriniz" : (me ? "Sizin cevabınız" : "Partnerinizin cevabı");
+    }
+    rows.push({ rule:r, who:who });
+  });
+  return rows;
+}
+
+function renderWhyNotSection(){
+  var rows = whyNotRows();
+  if (!rows.length) return "";
+  var html = rows.map(function(row, i){
+    var r = row.rule;
+    return '<div class="whynot-row whynot-c'+(i%6)+'" data-rule="'+esc(r.id)+'">'
+      + '<div class="whynot-cell whynot-idx"><span class="whynot-icon" aria-hidden="true">'+r.icon+'</span><span class="whynot-no">'+(i+1)+'</span></div>'
+      + '<div class="whynot-cell whynot-body">'
+      +   '<div class="whynot-title">'+esc(r.title)
+      +     (row.who ? '<span class="whynot-who">'+esc(row.who)+'</span>' : '')
+      +   '</div>'
+      +   '<p class="whynot-text">'+esc(r.text)+'</p>'
+      +   (r.action ? '<button type="button" class="btn btn-outline btn-sm whynot-action" data-qid="'+esc(r.action.qid)+'">'+esc(r.action.label)+' →</button>' : '')
+      + '</div>'
+      + '</div>';
+  }).join("");
+  return '<section class="whynot-wrap" aria-labelledby="whynotTitle">'
+    + '<h2 class="section-title" id="whynotTitle"><span class="n">!</span>Neden önermiyoruz?</h2>'
+    + '<p class="whynot-sub">Verdiğiniz cevaplara göre bazı yatak türlerini öneri listesinin dışında tuttuk. Gerekçelerini aşağıda satır satır bulabilirsiniz.</p>'
+    + '<div class="whynot-table" role="table">'+html+'</div>'
+    + '</section>';
+}
+
 function renderResultsScreen(results, view){
   view = view || "body";
   var root = qEl("#resultsRoot");
@@ -19160,6 +19288,7 @@ function renderResultsScreen(results, view){
           + renderPickSwitcher(view)
           + '<div class="rec-grid">'+picksHtml+'</div>'
           + extraPillowsHtml
+          + renderWhyNotSection()
         : '<div class="disclaimer-box"><strong>Sonuç bulunamadı:</strong> Seçilen yaş grubu / kategori için eşleşen ürün yok. Bir önceki adıma dönüp seçimleri gözden geçirin.</div>')
     + renderComparisonTable(picks)
     + renderComplementary(results.complementary)
@@ -19171,6 +19300,14 @@ function renderResultsScreen(results, view){
   qEl("#summaryText").textContent = buildCustomerSummaryText(results, picks);
 
   qAll(".chip-editable", root).forEach(function(btn){
+    btn.addEventListener("click", function(){
+      var qid = btn.getAttribute("data-qid");
+      backToQuestions();
+      goToStep(qid, "jump");
+    });
+  });
+
+  qAll(".whynot-action", root).forEach(function(btn){
     btn.addEventListener("click", function(){
       var qid = btn.getAttribute("data-qid");
       backToQuestions();
