@@ -566,38 +566,52 @@ table.compare .prod-col-name{ display:inline-block; }
   border:1px solid var(--border-strong,#cfd8d3); border-radius:var(--radius,16px); overflow:hidden;
   background:#fff; box-shadow:var(--shadow);
 }
-.whynot-row{ display:grid; grid-template-columns:58px 1fr; border-bottom:1px solid rgba(0,0,0,.06); }
+.whynot-row{ display:grid; grid-template-columns:52px 1fr; border-bottom:1px solid rgba(35,78,53,.12); }
 .whynot-row:last-child{ border-bottom:none; }
 .whynot-cell{ padding:14px 16px; }
 .whynot-idx{
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
-  border-right:1px solid rgba(0,0,0,.06);
+  display:flex; align-items:center; justify-content:center;
+  border-right:1px solid rgba(35,78,53,.12);
 }
-.whynot-icon{ font-size:20px; line-height:1; }
 .whynot-no{
-  width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
-  font-size:11px; font-weight:800; color:#fff; background:var(--whynot-accent,#0d3b34);
+  display:inline-flex; align-items:center; justify-content:center;
+  font-size:17px; font-weight:900; color:#12321f; line-height:1;
+  background:none; border:none; box-shadow:none;
 }
-.whynot-title{ font-size:13.5px; font-weight:800; color:var(--whynot-ink,#1c2624); line-height:1.35; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.whynot-title{ font-size:13.5px; font-weight:800; color:#1c4a31; line-height:1.35; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
 .whynot-who{
   font-size:10.5px; font-weight:700; letter-spacing:.3px; text-transform:uppercase;
-  padding:2px 8px; border-radius:999px; color:var(--whynot-accent,#0d3b34);
-  background:rgba(255,255,255,.75); border:1px solid var(--whynot-accent,#0d3b34);
+  padding:2px 8px; border-radius:999px; color:#2b5b3e;
+  background:rgba(255,255,255,.55); border:1px solid rgba(43,91,62,.35);
 }
-.whynot-text{ margin:7px 0 0; font-size:12.5px; line-height:1.6; color:var(--ink); }
-.whynot-action{ margin-top:10px; min-height:34px; font-size:12px; }
-/* Her satır farklı renk */
-.whynot-c0{ background:#fff4e6; --whynot-accent:#c2652a; --whynot-ink:#6b3410; }
-.whynot-c1{ background:#e9f5ec; --whynot-accent:#2e7d4f; --whynot-ink:#1c4a31; }
-.whynot-c2{ background:#e8f2fb; --whynot-accent:#2563a8; --whynot-ink:#173f6c; }
-.whynot-c3{ background:#f1ecfa; --whynot-accent:#6d4fb3; --whynot-ink:#3f2b73; }
-.whynot-c4{ background:#fdeceb; --whynot-accent:#c4443a; --whynot-ink:#7a221b; }
-.whynot-c5{ background:#fbf6dc; --whynot-accent:#a67c1a; --whynot-ink:#5f4708; }
+.whynot-text{ margin:7px 0 0; font-size:12.5px; line-height:1.6; color:#274b37; }
+/* Her satır, tema paletinde (orman/cam) farklı bir yarı saydam ton */
+.whynot-c0{ background:rgba(246,249,239,.34); }
+.whynot-c1{ background:rgba(226,239,218,.40); }
+.whynot-c2{ background:rgba(205,226,199,.42); }
+.whynot-c3{ background:rgba(236,243,228,.34); }
+.whynot-c4{ background:rgba(190,216,186,.42); }
+.whynot-c5{ background:rgba(241,246,234,.34); }
 @media (max-width:560px){
-  .whynot-row{ grid-template-columns:46px 1fr; }
+  .whynot-row{ grid-template-columns:42px 1fr; }
   .whynot-cell{ padding:12px 12px; }
-  .whynot-icon{ font-size:17px; }
 }
+/* Sonuç ekranı (doğa teması): filtre kutusuyla aynı cam görünümü */
+#screen-results .whynot-sub{ color:#f4f8f1; text-shadow:0 2px 12px rgba(0,0,0,.6); font-weight:600; }
+#screen-results .whynot-table{
+  border:1px solid rgba(255,255,255,.50);
+  background:rgba(235,244,226,.14);   /* satır tonları + bu zemin toplamda ~%50 saydam kalır */
+  box-shadow:0 14px 34px rgba(5,27,16,.24);
+  backdrop-filter:blur(10px) saturate(1.05);
+  -webkit-backdrop-filter:blur(10px) saturate(1.05);
+}
+#screen-results .whynot-row{ border-bottom-color:rgba(255,255,255,.38); }
+#screen-results .whynot-idx{ border-right-color:rgba(255,255,255,.38); }
+/* Okunabilirlik: yarı saydam zemin üzerinde koyu yeşil metin + açık hâle (halo) */
+#screen-results .whynot-title{ color:#0f2b1b; font-size:14px; text-shadow:0 0 6px rgba(255,255,255,.85),0 0 2px rgba(255,255,255,.9),0 1px 0 rgba(255,255,255,.7); }
+#screen-results .whynot-text{ color:#142f20; font-size:13px; font-weight:500; text-shadow:0 0 6px rgba(255,255,255,.8),0 0 2px rgba(255,255,255,.9),0 1px 0 rgba(255,255,255,.6); }
+#screen-results .whynot-no{ color:#0f2b1b; text-shadow:0 0 6px rgba(255,255,255,.85),0 0 2px rgba(255,255,255,.9); }
+#screen-results .whynot-who{ color:#12321f; background:rgba(255,255,255,.62); border-color:rgba(18,50,31,.35); }
 #screen-results .whynot-wrap h2.section-title .n::before{ content:"!"; font-weight:900; }
 
 .accessory-row{ display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; }
@@ -19198,7 +19212,7 @@ var WHY_NOT_RULES = [
     test:function(a){ return a.priority==="uzun_omurlu"; },
     title:"Önceliğiniz uzun ömür — paket yaylı organik yataklar neden önerilmiyor?",
     text:"Doğal pamuk, yün ve at yelesi gibi organik konfor malzemeleri, yapıları gereği yıllar içinde vücudunuza göre şekil alabilir ve ezilebilir. Uzun ömürlü kullanım önceliğiniz olduğu için paket yaylı organik yataklarımızı size önermedik; formunu çok daha uzun süre koruyan lateks ve visko modellere öncelik verdik." },
-  { id:"dogal", qid:"priority", icon:"🌿", action:{qid:"priority", label:"Öncelik seçimimi değiştir"},
+  { id:"dogal", qid:"priority", icon:"🌿",
     test:function(a){ return a.priority==="dogal"; },
     title:"Önceliğiniz doğal malzeme — visko modeller neden önerilmiyor?",
     text:"Önceliğiniz doğal malzeme olduğu için sentetik esaslı visko yatak modellerimizi size önermedik. Visko modeller arasından size uygun olanları görmek isterseniz öncelik seçiminizi değiştirmeniz yeterlidir." },
@@ -19228,13 +19242,12 @@ function renderWhyNotSection(){
   var html = rows.map(function(row, i){
     var r = row.rule;
     return '<div class="whynot-row whynot-c'+(i%6)+'" data-rule="'+esc(r.id)+'">'
-      + '<div class="whynot-cell whynot-idx"><span class="whynot-icon" aria-hidden="true">'+r.icon+'</span><span class="whynot-no">'+(i+1)+'</span></div>'
+      + '<div class="whynot-cell whynot-idx"><span class="whynot-no">'+(i+1)+'</span></div>'
       + '<div class="whynot-cell whynot-body">'
       +   '<div class="whynot-title">'+esc(r.title)
       +     (row.who ? '<span class="whynot-who">'+esc(row.who)+'</span>' : '')
       +   '</div>'
       +   '<p class="whynot-text">'+esc(r.text)+'</p>'
-      +   (r.action ? '<button type="button" class="btn btn-outline btn-sm whynot-action" data-qid="'+esc(r.action.qid)+'">'+esc(r.action.label)+' →</button>' : '')
       + '</div>'
       + '</div>';
   }).join("");
@@ -19300,14 +19313,6 @@ function renderResultsScreen(results, view){
   qEl("#summaryText").textContent = buildCustomerSummaryText(results, picks);
 
   qAll(".chip-editable", root).forEach(function(btn){
-    btn.addEventListener("click", function(){
-      var qid = btn.getAttribute("data-qid");
-      backToQuestions();
-      goToStep(qid, "jump");
-    });
-  });
-
-  qAll(".whynot-action", root).forEach(function(btn){
     btn.addEventListener("click", function(){
       var qid = btn.getAttribute("data-qid");
       backToQuestions();
