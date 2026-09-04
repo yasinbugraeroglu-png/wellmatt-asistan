@@ -575,8 +575,8 @@ table.compare .prod-col-name{ display:inline-block; }
 }
 .whynot-no{
   display:inline-flex; align-items:center; justify-content:center;
-  font-size:17px; font-weight:900; color:#12321f; line-height:1;
-  background:none; border:none; box-shadow:none;
+  font-size:17px; font-weight:900; color:#285d40; line-height:1;
+  background:none; border:none; box-shadow:none; text-shadow:none;
 }
 .whynot-title{ font-size:13.5px; font-weight:800; color:#1c4a31; line-height:1.35; display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
 .whynot-who{
@@ -585,33 +585,29 @@ table.compare .prod-col-name{ display:inline-block; }
   background:rgba(255,255,255,.55); border:1px solid rgba(43,91,62,.35);
 }
 .whynot-text{ margin:7px 0 0; font-size:12.5px; line-height:1.6; color:#274b37; }
-/* Her satır, tema paletinde (orman/cam) farklı bir yarı saydam ton */
-.whynot-c0{ background:rgba(246,249,239,.34); }
-.whynot-c1{ background:rgba(226,239,218,.40); }
-.whynot-c2{ background:rgba(205,226,199,.42); }
-.whynot-c3{ background:rgba(236,243,228,.34); }
-.whynot-c4{ background:rgba(190,216,186,.42); }
-.whynot-c5{ background:rgba(241,246,234,.34); }
+/* Satırlar dönüşümlü: bir satır yeşil, bir satır beyaz (ürün kartındaki
+   "Neden uygun?" kutusu ve özellik çipleriyle aynı tonlar) */
+.whynot-row:nth-child(odd){ background:rgba(214,232,204,.45); }
+.whynot-row:nth-child(even){ background:rgba(255,255,255,.55); }
 @media (max-width:560px){
   .whynot-row{ grid-template-columns:42px 1fr; }
   .whynot-cell{ padding:12px 12px; }
 }
-/* Sonuç ekranı (doğa teması): filtre kutusuyla aynı cam görünümü */
+/* Sonuç ekranı (doğa teması): saydamlık ölçüsü ürün kartıyla aynı */
 #screen-results .whynot-sub{ color:#f4f8f1; text-shadow:0 2px 12px rgba(0,0,0,.6); font-weight:600; }
 #screen-results .whynot-table{
-  border:1px solid rgba(255,255,255,.50);
-  background:rgba(235,244,226,.14);   /* satır tonları + bu zemin toplamda ~%50 saydam kalır */
-  box-shadow:0 14px 34px rgba(5,27,16,.24);
-  backdrop-filter:blur(10px) saturate(1.05);
-  -webkit-backdrop-filter:blur(10px) saturate(1.05);
+  border:1px solid rgba(236,246,231,.78);
+  background:linear-gradient(155deg,rgba(250,251,243,.91),rgba(224,237,214,.79));
+  box-shadow:0 22px 54px rgba(4,27,16,.28),inset 0 1px 0 rgba(255,255,255,.82);
+  backdrop-filter:blur(18px) saturate(118%);
+  -webkit-backdrop-filter:blur(18px) saturate(118%);
 }
-#screen-results .whynot-row{ border-bottom-color:rgba(255,255,255,.38); }
-#screen-results .whynot-idx{ border-right-color:rgba(255,255,255,.38); }
-/* Okunabilirlik: yarı saydam zemin üzerinde koyu yeşil metin + açık hâle (halo) */
-#screen-results .whynot-title{ color:#0f2b1b; font-size:14px; text-shadow:0 0 6px rgba(255,255,255,.85),0 0 2px rgba(255,255,255,.9),0 1px 0 rgba(255,255,255,.7); }
-#screen-results .whynot-text{ color:#142f20; font-size:13px; font-weight:500; text-shadow:0 0 6px rgba(255,255,255,.8),0 0 2px rgba(255,255,255,.9),0 1px 0 rgba(255,255,255,.6); }
-#screen-results .whynot-no{ color:#0f2b1b; text-shadow:0 0 6px rgba(255,255,255,.85),0 0 2px rgba(255,255,255,.9); }
-#screen-results .whynot-who{ color:#12321f; background:rgba(255,255,255,.62); border-color:rgba(18,50,31,.35); }
+#screen-results .whynot-row{ border-bottom-color:rgba(48,98,66,.16); }
+#screen-results .whynot-idx{ border-right-color:rgba(48,98,66,.16); }
+#screen-results .whynot-title{ color:#285d40; font-size:14px; text-shadow:none; }
+#screen-results .whynot-text{ color:#3c5847; font-size:13px; font-weight:500; text-shadow:none; }
+#screen-results .whynot-no{ color:#285d40; text-shadow:none; }
+#screen-results .whynot-who{ color:#285d40; background:rgba(255,255,255,.62); border-color:rgba(48,98,66,.30); }
 #screen-results .whynot-wrap h2.section-title .n::before{ content:"!"; font-weight:900; }
 
 .accessory-row{ display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; }
@@ -19188,6 +19184,17 @@ function scrollToFirstProductCard(){
    Bebek/çocuk akışında bu sorular sorulmadığı için bölüm görünmez.
    --------------------------------------------------------------- */
 var WHY_NOT_RULES = [
+  /* --- Bebek / Çocuk akışı --- */
+  { id:"cocuk_alerji", qid:"allergyConcern", icon:"🤧", audience:"child",
+    test:function(a){ return a.allergyConcernBaby==="var" || a.allergyConcernChild==="var"; },
+    title:function(a){ return (a.usageType==="baby" ? "Bebeğinizin" : "Çocuğunuzun")+" alerjik rahatsızlığı var — pamuk ve yün içeren yataklar neden önerilmiyor?"; },
+    text:function(a){ var kid = a.usageType==="baby" ? "bebek" : "çocuk";
+      return "Bebek ve çocuk yataklarımızın büyük çoğunluğu doğal malzemelerden üretilmektedir. Ancak yoğun alerjen hassasiyeti olan çocuklarda %95 oranında en iyi sonucu veren malzeme lateks olduğu için, pamuk ve yün kullanmadığımız lateks yatak modellerimiz arasından öneride bulunduk. Lateksin gözenekli yapısı toz akarı ve nem barındırmaz; "+kid+"unuzun alerjik hassasiyetini tetiklemeden hijyenik bir uyku yüzeyi sağlar."; } },
+  { id:"cocuk_uzun_omurlu", qid:"priority", icon:"⏳", audience:"child",
+    test:function(a){ return a.priority==="uzun_omurlu"; },
+    title:"Önceliğiniz uzun ömür — pamuk ve yün dolgulu yataklar neden önerilmiyor?",
+    text:"Doğal pamuk ve yün gibi organik konfor malzemeleri, yapıları gereği yıllar içinde vücuda göre şekil alabilir ve ezilebilir. Uzun ömürlü kullanım önceliğiniz olduğu için bu malzemelerin bulunduğu yatakları önermedik; formunu çok daha uzun süre koruyan lateks modellere öncelik verdik." },
+  /* --- Yetişkin akışı --- */
   { id:"yuzustu", qid:"sleepPosition", icon:"🙇",
     test:function(a){ return Array.isArray(a.sleepPosition) && a.sleepPosition.indexOf("yuzustu")!==-1; },
     testPartner:function(a){ return Array.isArray(a.partnerSleepPosition) && a.partnerSleepPosition.indexOf("yuzustu")!==-1; },
@@ -19220,10 +19227,12 @@ var WHY_NOT_RULES = [
 
 function whyNotRows(){
   var a = WM.state.answers || {};
-  if (a.usageType === "baby" || a.usageType === "child") return [];
+  var isChildFlow = a.usageType === "baby" || a.usageType === "child";
   var isCouple = a.usageType === "couple";
   var rows = [];
   WHY_NOT_RULES.forEach(function(r){
+    // audience:"child" kuralları yalnızca bebek/çocuk akışında, diğerleri yalnızca yetişkinde
+    if ((r.audience === "child") !== isChildFlow) return;
     var me = !!r.test(a);
     var partner = isCouple && typeof r.testPartner === "function" ? !!r.testPartner(a) : false;
     if (!me && !partner) return;
@@ -19231,7 +19240,11 @@ function whyNotRows(){
     if (isCouple && (me || partner)){
       who = me && partner ? "Siz ve partneriniz" : (me ? "Sizin cevabınız" : "Partnerinizin cevabı");
     }
-    rows.push({ rule:r, who:who });
+    rows.push({ rule:{
+      id:r.id, qid:r.qid, icon:r.icon,
+      title: typeof r.title === "function" ? r.title(a) : r.title,
+      text: typeof r.text === "function" ? r.text(a) : r.text
+    }, who:who });
   });
   return rows;
 }
@@ -19394,7 +19407,8 @@ async function createResultsPdfFile(){
   var views = PICK_VIEWS.filter(function(v){
     return !!((lastResults.picksByView && lastResults.picksByView[v.id]) || lastResults.picks);
   });
-  var pageCount = views.length || 1;
+  var whyRows = whyNotRows();
+  var pageCount = (views.length || 1) + (whyRows.length ? 1 : 0);
   var previewDataUrls = [];
   var originalView = currentPickView;
   var scrollX = window.scrollX, scrollY = window.scrollY;
@@ -19410,6 +19424,11 @@ async function createResultsPdfFile(){
     renderResultsScreen(lastResults, originalView);
     window.scrollTo(scrollX, scrollY);
   }
+  if (whyRows.length){
+    // Son sayfa: "Neden önermiyoruz?" bölümü (filtreden bağımsız).
+    var whyCanvas = drawWhyNotPdfPage(logo, whyRows, pageCount, pageCount);
+    previewDataUrls.push(whyCanvas.toDataURL("image/jpeg",0.92));
+  }
 
   var PDF=window.jspdf.jsPDF;
   var pdf=new PDF({orientation:"portrait",unit:"mm",format:"a4",compress:true});
@@ -19423,6 +19442,88 @@ async function createResultsPdfFile(){
   file.wmPreviewDataUrl=previewDataUrls[0];
   file.wmPreviewDataUrls=previewDataUrls;
   return file;
+}
+
+/** "Neden önermiyoruz?" sayfası (1240×1754). Satırlar ekrandaki gibi
+ *  dönüşümlü yeşil/beyaz zeminle çizilir. */
+function drawWhyNotPdfPage(logo, rows, pageNo, pageCount){
+  var canvas = document.createElement("canvas");
+  canvas.width = 1240; canvas.height = 1754;
+  var ctx = canvas.getContext("2d");
+  function txt(value){ return String(value || "").replace(/\s+/g," ").trim(); }
+  function wrapLines(value,maxWidth){
+    var words=txt(value).split(" "),line="",lines=[];
+    words.forEach(function(word){
+      var test=line ? line+" "+word : word;
+      if(ctx.measureText(test).width>maxWidth && line){lines.push(line);line=word;}else line=test;
+    });
+    if(line) lines.push(line);
+    return lines;
+  }
+  function roundedPath(x,y,w,h,r){
+    r=Math.min(r,w/2,h/2);ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+  }
+  ctx.fillStyle="#f4f1e8";ctx.fillRect(0,0,canvas.width,canvas.height);
+  var grad=ctx.createLinearGradient(0,0,1240,180);grad.addColorStop(0,"#123e2a");grad.addColorStop(1,"#668464");
+  ctx.fillStyle=grad;ctx.fillRect(0,0,1240,180);
+  if(logo&&logo.complete&&logo.naturalWidth){
+    var logoCanvas=document.createElement("canvas"),logoCtx=logoCanvas.getContext("2d");
+    logoCanvas.width=540;logoCanvas.height=114;logoCtx.drawImage(logo,0,0,540,114);
+    logoCtx.globalCompositeOperation="source-in";logoCtx.fillStyle="#fff";logoCtx.fillRect(0,0,540,114);
+    ctx.drawImage(logoCanvas,58,30,270,57);
+  }
+  ctx.font="400 23px Arial, sans-serif";ctx.fillStyle="rgba(255,255,255,.86)";ctx.fillText("Size özel yatak seçim raporu",58,126);
+  ctx.font="400 18px Arial, sans-serif";ctx.textAlign="right";
+  ctx.fillText(new Date().toLocaleDateString("tr-TR"),1182,72);
+  ctx.fillText("Sayfa "+pageNo+" / "+pageCount,1182,126);
+  ctx.textAlign="left";
+
+  ctx.fillStyle="#173827";ctx.font="700 29px Arial, sans-serif";ctx.fillText("Neden önermiyoruz?",58,236);
+  ctx.fillStyle="#466353";ctx.font="400 17px Arial, sans-serif";
+  ctx.fillText("Verdiğiniz cevaplara göre bazı yatak türlerini öneri listesinin dışında tuttuk. Gerekçeleri aşağıdadır.",58,266);
+
+  // Satır yükseklikleri önceden ölçülür; sayfaya sığmazsa yazı biraz küçültülür.
+  var tableX=48, tableW=1144, idxW=62, padX=22, padY=20;
+  var textW=tableW-idxW-padX*2;
+  var titleFont=22, textFont=17, titleLH=27, textLH=23, gapTT=10;
+  var available=1754-300-90; // üst başlık ve alt bilgi payı
+  var measured;
+  for (var attempt=0; attempt<6; attempt++){
+    measured=rows.map(function(row){
+      var t=row.rule.title+(row.who?"  ·  "+row.who:"");
+      ctx.font="700 "+titleFont+"px Arial, sans-serif"; var tl=wrapLines(t,textW);
+      ctx.font="400 "+textFont+"px Arial, sans-serif"; var bl=wrapLines(row.rule.text,textW);
+      return {tl:tl, bl:bl, h:padY*2+tl.length*titleLH+gapTT+bl.length*textLH};
+    });
+    var total=measured.reduce(function(acc,m){return acc+m.h;},0);
+    if (total<=available) break;
+    titleFont-=1; textFont-=1; titleLH-=1; textLH-=1; padY=Math.max(12,padY-2);
+  }
+  var tableY=296, y=tableY, tableH=measured.reduce(function(acc,m){return acc+m.h;},0);
+  ctx.save(); roundedPath(tableX,tableY,tableW,tableH,22); ctx.clip();
+  rows.forEach(function(row,i){
+    var m=measured[i];
+    ctx.fillStyle = i%2===0 ? "#dbe9d3" : "#ffffff";
+    ctx.fillRect(tableX,y,tableW,m.h);
+    ctx.strokeStyle="rgba(48,98,66,.18)";ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(tableX+idxW,y);ctx.lineTo(tableX+idxW,y+m.h);ctx.stroke();
+    if(i>0){ctx.beginPath();ctx.moveTo(tableX,y);ctx.lineTo(tableX+tableW,y);ctx.stroke();}
+    ctx.fillStyle="#285d40";ctx.font="900 26px Arial, sans-serif";ctx.textAlign="center";
+    ctx.fillText(String(i+1),tableX+idxW/2,y+m.h/2+9);ctx.textAlign="left";
+    var tx=tableX+idxW+padX, ty=y+padY+titleFont-4;
+    ctx.fillStyle="#285d40";ctx.font="700 "+titleFont+"px Arial, sans-serif";
+    m.tl.forEach(function(line,li){ctx.fillText(line,tx,ty+li*titleLH);});
+    ty+=m.tl.length*titleLH+gapTT;
+    ctx.fillStyle="#3c5847";ctx.font="400 "+textFont+"px Arial, sans-serif";
+    m.bl.forEach(function(line,li){ctx.fillText(line,tx,ty+li*textLH);});
+    y+=m.h;
+  });
+  ctx.restore();
+  ctx.strokeStyle="rgba(48,98,66,.28)";ctx.lineWidth=2;roundedPath(tableX,tableY,tableW,tableH,22);ctx.stroke();
+
+  ctx.fillStyle="#466353";ctx.font="400 15px Arial, sans-serif";ctx.fillText("Fiyatlar ve stok durumu sipariş öncesinde doğrulanmalıdır.",58,1706);
+  ctx.textAlign="right";ctx.fillText("WellMatt.com",1182,1706);ctx.textAlign="left";
+  return canvas;
 }
 
 /** Tek bir A4 sayfayı (1240×1754) canvas'a çizer. activeView: bu sayfanın
@@ -19580,7 +19681,7 @@ function downloadPdfFile(file){
 async function shareSummary(){
   var btn = qEl("#shareBtn");
   if (btn) btn.disabled = true;
-  showToast("3 sayfalık PDF hazırlanıyor…");
+  showToast("PDF hazırlanıyor…");
   try{
     var file = await createResultsPdfFile();
     var payload = {files:[file],title:"WellMatt Yatak Seçim Rehberi",text:"Size özel WellMatt yatak önerileri"};
@@ -19604,10 +19705,10 @@ async function shareSummary(){
 }
 async function previewResultsPdf(){
   try{
-    showToast("3 sayfalık PDF hazırlanıyor…");
+    showToast("PDF hazırlanıyor…");
     var file=await createResultsPdfFile();
     showPdfPreview(file);
-    showToast("3 sayfalık PDF hazır.");
+    showToast("PDF hazır.");
   }catch(err){
     showToast("PDF hazırlanamadı. Lütfen yeniden deneyin.");
     console.error(err);
